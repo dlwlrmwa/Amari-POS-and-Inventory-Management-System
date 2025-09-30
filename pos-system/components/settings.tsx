@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,8 +8,40 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Store, Users, Bell, Shield } from "lucide-react"
+import { supabase } from "@/lib/supabase/client"
 
 export function Settings() {
+  const [newUsername, setNewUsername] = useState("")
+  const [newUserName, setNewUserName] = useState("") // ✅ NEW full name field
+  const [newUserRole, setNewUserRole] = useState<"cashier" | "manager" | "admin">("cashier")
+  const [newUserPassword, setNewUserPassword] = useState("")
+
+  const handleAddUser = async () => {
+    if (!newUsername || !newUserName || !newUserPassword || !newUserRole) {
+      alert("Please fill in all fields for the new user.")
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from("users")
+        .insert([
+          { username: newUsername, name: newUserName, role: newUserRole, password: newUserPassword },
+        ])
+
+      if (error) throw error
+
+      alert(`User "${newUsername}" created successfully!`)
+      setNewUsername("")
+      setNewUserName("")
+      setNewUserPassword("")
+      setNewUserRole("cashier")
+    } catch (error: any) {
+      console.error("Error adding user:", error)
+      alert(`Failed to add user: ${error.message}`)
+    }
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -30,7 +63,7 @@ export function Settings() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="store-name">Store Name</Label>
-              <Input id="store-name" defaultValue="My Retail Store" />
+              <Input id="store-name" defaultValue="Amari's Scoops & Savours" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="store-address">Address</Label>
@@ -61,12 +94,29 @@ export function Settings() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="new-username">New User Username</Label>
-              <Input id="new-username" placeholder="Enter username" />
+              <Label htmlFor="new-username">Username</Label>
+              <Input
+                id="new-username"
+                placeholder="Enter username"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-name">Full Name</Label>
+              <Input
+                id="new-name"
+                placeholder="Enter full name"
+                value={newUserName}
+                onChange={(e) => setNewUserName(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="user-role">Role</Label>
-              <Select>
+              <Select
+                value={newUserRole}
+                onValueChange={(value: "cashier" | "manager" | "admin") => setNewUserRole(value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
@@ -79,9 +129,15 @@ export function Settings() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="user-password">Password</Label>
-              <Input id="user-password" type="password" placeholder="Enter password" />
+              <Input
+                id="user-password"
+                type="password"
+                placeholder="Enter password"
+                value={newUserPassword}
+                onChange={(e) => setNewUserPassword(e.target.value)}
+              />
             </div>
-            <Button>Add User</Button>
+            <Button onClick={handleAddUser}>Add User</Button>
           </CardContent>
         </Card>
 

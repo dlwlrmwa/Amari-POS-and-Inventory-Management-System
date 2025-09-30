@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { supabase } from "./supabase/client"
 
 export type UserRole = "cashier" | "manager" | "admin"
 
@@ -15,33 +16,17 @@ interface AuthContextType {
   user: User | null
   login: (username: string, password: string) => Promise<boolean>
   logout: () => void
+  addUser: (username: string, password: string, name: string, role: UserRole) => Promise<boolean>
   isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-// Mock users for demo purposes
-const mockUsers: Record<string, { password: string; user: User }> = {
-  admin: {
-    password: "admin123",
-    user: { id: "1", username: "admin", role: "admin", name: "Admin User" },
-  },
-  manager: {
-    password: "manager123",
-    user: { id: "2", username: "manager", role: "manager", name: "Manager User" },
-  },
-  cashier: {
-    password: "cashier123",
-    user: { id: "3", username: "cashier", role: "cashier", name: "Cashier User" },
-  },
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check for stored user session
     const storedUser = localStorage.getItem("pos-user")
     if (storedUser) {
       setUser(JSON.parse(storedUser))
@@ -50,13 +35,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = async (username: string, password: string): Promise<boolean> => {
-    const userRecord = mockUsers[username]
-    if (userRecord && userRecord.password === password) {
-      setUser(userRecord.user)
-      localStorage.setItem("pos-user", JSON.stringify(userRecord.user))
+    const { data, error } = await supabase
+      .from("users")
+      .select("id, username, role, name, password")
+      .eq("username", username)
+      .single()
+
+    if (error || !data) return false
+
+    // ⚠️ Replace with hashed password check in production
+    if (data.password === password) {
+      const userObj: User = { id: data.id, username: data.username, role: data.role, name: data.name }
+      setUser(userObj)
+      localStorage.setItem("pos-user", JSON.stringify(userObj))
       return true
     }
     return false
+  }
+
+  const addUser = async (username: string, password: string, name: string, role: UserRole): Promise<boolean> => {
+    try {
+      const { error } = await supabase.from("users").insert([{ username, password, name, role }])
+      if (error) throw error
+      return true
+    } catch (err) {
+      console.error("Error adding user:", err)
+      return false
+    }
   }
 
   const logout = () => {
@@ -64,7 +69,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("pos-user")
   }
 
-  return <AuthContext.Provider value={{ user, login, logout, isLoading }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, login, logout, addUser, isLoading }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {

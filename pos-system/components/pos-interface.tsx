@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -14,75 +14,36 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Search, Plus, Minus, ShoppingCart, CreditCard, Trash2, X } from "lucide-react"
+import type { Product, CartItem } from "@/lib/supabase/client"
+import { getProducts } from "@/lib/data/products"
+import { createSale } from "@/lib/data/sales"
 
-// Mock product data
-const products = [
-  {
-    id: 1,
-    name: "Coffee Beans Premium",
-    price: 15.99,
-    category: "Beverages",
-    stock: 45,
-    image: "/pile-of-coffee-beans.png",
-  },
-  {
-    id: 2,
-    name: "Wireless Headphones",
-    price: 99.99,
-    category: "Electronics",
-    stock: 23,
-    image: "/wireless-headphones.png",
-  },
-  {
-    id: 3,
-    name: "Organic Tea Set",
-    price: 24.99,
-    category: "Beverages",
-    stock: 31,
-    image: "/tea-set.jpg",
-  },
-  {
-    id: 4,
-    name: "Notebook Premium",
-    price: 12.99,
-    category: "Stationery",
-    stock: 67,
-    image: "/open-notebook-desk.png",
-  },
-  {
-    id: 5,
-    name: "Bluetooth Speaker",
-    price: 79.99,
-    category: "Electronics",
-    stock: 18,
-    image: "/bluetooth-speaker.png",
-  },
-  { id: 6, name: "Green Tea Bags", price: 8.99, category: "Beverages", stock: 89, image: "/green-tea-bags.jpg" },
-  { id: 7, name: "Pen Set", price: 19.99, category: "Stationery", stock: 34, image: "/elegant-pen-set.png" },
-  {
-    id: 8,
-    name: "Smartphone Case",
-    price: 29.99,
-    category: "Electronics",
-    stock: 56,
-    image: "/colorful-phone-case-display.png",
-  },
-]
-
-const categories = ["All", "Beverages", "Electronics", "Stationery"]
-
-interface CartItem {
-  id: number
-  name: string
-  price: number
-  quantity: number
-}
+const categories = ["All", "Beverages", "Food", "Ice Cream"]
 
 export function POSInterface() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [cart, setCart] = useState<CartItem[]>([])
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+
+  useEffect(() => {
+    loadProducts()
+  }, [])
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true)
+      const data = await getProducts()
+      setProducts(data)
+    } catch (error) {
+      console.error('Error loading products:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -90,21 +51,34 @@ export function POSInterface() {
     return matchesSearch && matchesCategory
   })
 
-  const addToCart = (product: (typeof products)[0]) => {
+  const addToCart = (product: Product) => {
     setCart((prev) => {
       const existingItem = prev.find((item) => item.id === product.id)
       if (existingItem) {
-        return prev.map((item) => (item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item))
+        return prev.map((item) =>
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
       }
-      return [...prev, { id: product.id, name: product.name, price: product.price, quantity: 1 }]
+      return [...prev, {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: 1
+      }]
     })
   }
 
   const updateQuantity = (id: number, change: number) => {
     setCart((prev) =>
       prev
-        .map((item) => (item.id === id ? { ...item, quantity: Math.max(0, item.quantity + change) } : item))
-        .filter((item) => item.quantity > 0),
+        .map((item) =>
+          item.id === id
+            ? { ...item, quantity: Math.max(0, item.quantity + change) }
+            : item
+        )
+        .filter((item) => item.quantity > 0)
     )
   }
 
@@ -124,11 +98,42 @@ export function POSInterface() {
     return cart.reduce((total, item) => total + item.quantity, 0)
   }
 
-  const handleCheckout = () => {
-    // Mock checkout process
-    alert(`Transaction completed! Total: $${getTotalAmount().toFixed(2)}`)
-    clearCart()
-    setIsCheckoutOpen(false)
+  const handleCheckout = async (paymentMethod: 'Cash' | 'Card') => {
+    if (cart.length === 0) return
+
+    try {
+      setIsProcessing(true)
+
+      // Create sale in database
+      await createSale(cart, paymentMethod)
+
+      // Show success message
+      const total = getTotalAmount() * 1.085
+      alert(`Transaction completed!\nTotal: ₱${total.toFixed(2)}\nPayment: ${paymentMethod}`)
+
+      // Clear cart and close dialog
+      clearCart()
+      setIsCheckoutOpen(false)
+
+      // Reload products to update stock
+      await loadProducts()
+    } catch (error) {
+      console.error('Error processing checkout:', error)
+      alert('Failed to process transaction. Please try again.')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading products...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -180,12 +185,17 @@ export function POSInterface() {
                 </div>
                 <h3 className="font-medium text-sm mb-1 line-clamp-2">{product.name}</h3>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-lg font-bold text-primary">${product.price}</span>
+                  <span className="text-lg font-bold text-primary">₱{product.price.toFixed(2)}</span>
                   <Badge variant="outline" className="text-xs">
                     {product.stock} left
                   </Badge>
                 </div>
-                <Button onClick={() => addToCart(product)} className="w-full" size="sm" disabled={product.stock === 0}>
+                <Button
+                  onClick={() => addToCart(product)}
+                  className="w-full"
+                  size="sm"
+                  disabled={product.stock === 0}
+                >
                   <Plus className="h-4 w-4 mr-1" />
                   Add to Cart
                 </Button>
@@ -249,7 +259,7 @@ export function POSInterface() {
                         <Plus className="h-3 w-3" />
                       </Button>
                     </div>
-                    <span className="font-bold text-primary">${(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="font-bold text-primary">₱{(item.price * item.quantity).toFixed(2)}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -263,21 +273,21 @@ export function POSInterface() {
             <div className="border-t pt-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-muted-foreground">Items ({getTotalItems()})</span>
-                <span className="font-medium">${getTotalAmount().toFixed(2)}</span>
+                <span className="font-medium">₱{getTotalAmount().toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-muted-foreground">Tax (8.5%)</span>
-                <span className="font-medium">${(getTotalAmount() * 0.085).toFixed(2)}</span>
+                <span className="font-medium">₱{(getTotalAmount() * 0.085).toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
                 <span>Total</span>
-                <span className="text-primary">${(getTotalAmount() * 1.085).toFixed(2)}</span>
+                <span className="text-primary">₱{(getTotalAmount() * 1.085).toFixed(2)}</span>
               </div>
             </div>
 
             <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full" size="lg">
+                <Button className="w-full" size="lg" disabled={isProcessing}>
                   <CreditCard className="h-4 w-4 mr-2" />
                   Checkout
                 </Button>
@@ -295,17 +305,28 @@ export function POSInterface() {
                         <span>
                           {item.name} x{item.quantity}
                         </span>
-                        <span>${(item.price * item.quantity).toFixed(2)}</span>
+                        <span>₱{(item.price * item.quantity).toFixed(2)}</span>
                       </div>
                     ))}
-                    <div className="border-t mt-2 pt-2 font-bold">Total: ${(getTotalAmount() * 1.085).toFixed(2)}</div>
+                    <div className="border-t mt-2 pt-2 font-bold">
+                      Total: ₱{(getTotalAmount() * 1.085).toFixed(2)}
+                    </div>
                   </div>
                   <div className="flex space-x-2">
-                    <Button onClick={handleCheckout} className="flex-1">
-                      Cash Payment
+                    <Button
+                      onClick={() => handleCheckout('Cash')}
+                      className="flex-1"
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? 'Processing...' : 'Cash Payment'}
                     </Button>
-                    <Button onClick={handleCheckout} variant="outline" className="flex-1 bg-transparent">
-                      Card Payment
+                    <Button
+                      onClick={() => handleCheckout('Card')}
+                      variant="outline"
+                      className="flex-1 bg-transparent"
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? 'Processing...' : 'Card Payment'}
                     </Button>
                   </div>
                 </div>

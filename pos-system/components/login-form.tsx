@@ -38,8 +38,8 @@ export function LoginForm() {
               <ShoppingCart className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">POS System</CardTitle>
-          <CardDescription>Sign in to access your point of sale system</CardDescription>
+          <CardTitle className="text-2xl font-bold">Amari's Scoops & Savours</CardTitle>
+          <CardDescription>Sign in to access the system</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

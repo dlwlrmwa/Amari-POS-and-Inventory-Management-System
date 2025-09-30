@@ -1,106 +1,118 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts"
-import { Download, Calendar, DollarSign, ShoppingCart, TrendingUp, FileText } from "lucide-react"
-
-// Mock sales data
-const dailySalesData = [
-  { date: "Mon", sales: 1250, transactions: 45 },
-  { date: "Tue", sales: 1890, transactions: 67 },
-  { date: "Wed", sales: 2340, transactions: 89 },
-  { date: "Thu", sales: 1670, transactions: 56 },
-  { date: "Fri", sales: 2847, transactions: 127 },
-  { date: "Sat", sales: 3120, transactions: 145 },
-  { date: "Sun", sales: 2680, transactions: 98 },
-]
-
-const weeklySalesData = [
-  { week: "Week 1", sales: 12450, transactions: 456 },
-  { week: "Week 2", sales: 15670, transactions: 578 },
-  { week: "Week 3", sales: 18920, transactions: 689 },
-  { week: "Week 4", sales: 16780, transactions: 612 },
-]
-
-const topProductsData = [
-  { name: "Coffee Beans Premium", sales: 45, revenue: 675.0 },
-  { name: "Wireless Headphones", sales: 23, revenue: 2300.0 },
-  { name: "Organic Tea Set", sales: 31, revenue: 465.0 },
-  { name: "Bluetooth Speaker", sales: 18, revenue: 1440.0 },
-  { name: "Notebook Premium", sales: 28, revenue: 364.0 },
-]
-
-const recentTransactions = [
-  {
-    id: "TXN-2024-001",
-    date: "2024-01-15",
-    time: "14:30",
-    customer: "John Doe",
-    items: 3,
-    amount: 124.5,
-    paymentMethod: "Card",
-    status: "Completed",
-  },
-  {
-    id: "TXN-2024-002",
-    date: "2024-01-15",
-    time: "14:25",
-    customer: "Jane Smith",
-    items: 2,
-    amount: 89.99,
-    paymentMethod: "Cash",
-    status: "Completed",
-  },
-  {
-    id: "TXN-2024-003",
-    date: "2024-01-15",
-    time: "14:20",
-    customer: "Mike Johnson",
-    items: 5,
-    amount: 234.75,
-    paymentMethod: "Card",
-    status: "Completed",
-  },
-  {
-    id: "TXN-2024-004",
-    date: "2024-01-15",
-    time: "14:15",
-    customer: "Sarah Wilson",
-    items: 1,
-    amount: 15.99,
-    paymentMethod: "Cash",
-    status: "Completed",
-  },
-  {
-    id: "TXN-2024-005",
-    date: "2024-01-15",
-    time: "14:10",
-    customer: "David Brown",
-    items: 4,
-    amount: 178.25,
-    paymentMethod: "Card",
-    status: "Completed",
-  },
-]
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+} from "recharts"
+import {
+  Download,
+  Calendar,
+  DollarSign,
+  ShoppingCart,
+  TrendingUp,
+  FileText,
+  FileSpreadsheet,
+} from "lucide-react"
+import type { Sale } from "@/lib/supabase/client"
+import { getSales, getSalesStats } from "@/lib/data/sales"
+import { exportSalesToExcel, exportSalesToPDF } from "@/lib/utils/export"
+import { supabase } from "@/lib/supabase/client"
 
 export function SalesReports() {
+  const [sales, setSales] = useState<Sale[]>([])
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({
+    totalSales: 0,
+    totalTransactions: 0,
+    averageOrderValue: 0,
+  })
   const [selectedPeriod, setSelectedPeriod] = useState("daily")
   const [selectedChart, setSelectedChart] = useState("sales")
+  const [chartData, setChartData] = useState<any[]>([])
+  const [topProducts, setTopProducts] = useState<any[]>([])
 
-  const chartData = selectedPeriod === "daily" ? dailySalesData : weeklySalesData
+  useEffect(() => {
+    loadSales()
+    loadReports()
+  }, [])
 
-  const totalSales = chartData.reduce((sum, item) => sum + item.sales, 0)
-  const totalTransactions = chartData.reduce((sum, item) => sum + item.transactions, 0)
-  const averageOrderValue = totalSales / totalTransactions
+  const loadSales = async () => {
+    try {
+      setLoading(true)
+      const [salesData, statsData] = await Promise.all([
+        getSales(20), // last 20 transactions
+        getSalesStats(),
+      ])
+      setSales(salesData)
+      setStats(statsData)
+    } catch (error) {
+      console.error("Error loading sales:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const handleExportData = () => {
-    // Mock export functionality
-    alert("Sales report exported successfully!")
+  const loadReports = async () => {
+    try {
+      // Daily/weekly sales summary
+      const { data: dailyData, error: dailyError } = await supabase
+        .from("daily_sales_summary")
+        .select("*")
+        .order("date", { ascending: true })
+
+      if (dailyError) throw dailyError
+      setChartData(dailyData || [])
+
+      // Top products
+      const { data: productData, error: productError } = await supabase
+        .from("product_sales_performance")
+        .select("*")
+        .order("total_revenue", { ascending: false })
+        .limit(5)
+
+      if (productError) throw productError
+      setTopProducts(productData || [])
+    } catch (error) {
+      console.error("Error loading reports:", error)
+    }
+  }
+
+  const handleExportExcel = () => {
+    exportSalesToExcel(sales, "sales-report")
+  }
+
+  const handleExportPDF = () => {
+    exportSalesToPDF(sales, "sales-report")
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading sales data...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -121,10 +133,25 @@ export function SalesReports() {
               <SelectItem value="weekly">Weekly</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleExportData} variant="outline" className="bg-transparent">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="bg-transparent">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={handleExportExcel}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Export to Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportPDF}>
+                <FileText className="h-4 w-4 mr-2" />
+                Export to PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -136,8 +163,8 @@ export function SalesReports() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">${totalSales.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">{selectedPeriod === "daily" ? "This week" : "This month"}</p>
+            <div className="text-2xl font-bold text-primary">₱{stats.totalSales.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">All time</p>
           </CardContent>
         </Card>
 
@@ -147,7 +174,7 @@ export function SalesReports() {
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalTransactions}</div>
+            <div className="text-2xl font-bold">{stats.totalTransactions}</div>
             <p className="text-xs text-muted-foreground">Total transactions</p>
           </CardContent>
         </Card>
@@ -158,7 +185,7 @@ export function SalesReports() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${averageOrderValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">₱{stats.averageOrderValue.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">Per transaction</p>
           </CardContent>
         </Card>
@@ -183,14 +210,16 @@ export function SalesReports() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Sales Overview</CardTitle>
-                <CardDescription>{selectedPeriod === "daily" ? "Daily" : "Weekly"} sales performance</CardDescription>
+                <CardDescription>
+                  {selectedPeriod === "daily" ? "Daily" : "Weekly"} sales performance
+                </CardDescription>
               </div>
               <Select value={selectedChart} onValueChange={setSelectedChart}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sales">Sales ($)</SelectItem>
+                  <SelectItem value="sales">Sales (₱)</SelectItem>
                   <SelectItem value="transactions">Transactions</SelectItem>
                 </SelectContent>
               </Select>
@@ -201,18 +230,23 @@ export function SalesReports() {
               {selectedChart === "sales" ? (
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey={selectedPeriod === "daily" ? "date" : "week"} />
+                  <XAxis dataKey="date" />
                   <YAxis />
-                  <Tooltip formatter={(value) => [`$${value}`, "Sales"]} />
-                  <Bar dataKey="sales" fill="hsl(var(--primary))" />
+                  <Tooltip formatter={(value) => [`₱${value}`, "Sales"]} />
+                  <Bar dataKey="total_sales" fill="hsl(var(--primary))" />
                 </BarChart>
               ) : (
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey={selectedPeriod === "daily" ? "date" : "week"} />
+                  <XAxis dataKey="date" />
                   <YAxis />
                   <Tooltip formatter={(value) => [value, "Transactions"]} />
-                  <Line type="monotone" dataKey="transactions" stroke="hsl(var(--primary))" strokeWidth={2} />
+                  <Line
+                    type="monotone"
+                    dataKey="transaction_count"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                  />
                 </LineChart>
               )}
             </ResponsiveContainer>
@@ -227,22 +261,31 @@ export function SalesReports() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {topProductsData.map((product, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
-                      {index + 1}
+              {topProducts.length === 0 ? (
+                <p className="text-muted-foreground text-center">No product sales yet</p>
+              ) : (
+                topProducts.map((product, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium">{product.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {product.total_sold} units sold
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{product.name}</p>
-                      <p className="text-sm text-muted-foreground">{product.sales} units sold</p>
+                    <div className="text-right">
+                      <p className="font-bold text-primary">₱{product.total_revenue.toFixed(2)}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-primary">${product.revenue.toFixed(2)}</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -259,51 +302,55 @@ export function SalesReports() {
               </CardTitle>
               <CardDescription>Latest sales transactions and order details</CardDescription>
             </div>
-            <Button variant="outline" size="sm" className="bg-transparent">
-              View All
-            </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Transaction ID</TableHead>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentTransactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell className="font-mono text-sm">{transaction.id}</TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{transaction.date}</p>
-                      <p className="text-sm text-muted-foreground">{transaction.time}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>{transaction.customer}</TableCell>
-                  <TableCell>{transaction.items}</TableCell>
-                  <TableCell className="font-bold">${transaction.amount.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <Badge variant={transaction.paymentMethod === "Card" ? "default" : "secondary"}>
-                      {transaction.paymentMethod}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
-                      {transaction.status}
-                    </Badge>
-                  </TableCell>
+          {sales.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">No transactions yet</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Transaction ID</TableHead>
+                  <TableHead>Date & Time</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {sales.map((transaction) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell className="font-mono text-sm">{transaction.id}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{transaction.date}</p>
+                        <p className="text-sm text-muted-foreground">{transaction.time}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>{transaction.customer || "Walk-in"}</TableCell>
+                    <TableCell className="font-bold">₱{transaction.totalAmount.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={transaction.paymentMethod === "Card" ? "default" : "secondary"}
+                      >
+                        {transaction.paymentMethod}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="default"
+                        className="bg-green-100 text-green-800 border-green-200"
+                      >
+                        {transaction.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

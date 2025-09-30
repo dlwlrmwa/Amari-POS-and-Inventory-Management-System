@@ -1,0 +1,189 @@
+import { supabase, type Sale, type SaleItem, type CartItem } from '@/lib/supabase/client'
+import { updateStock } from './products'
+
+export async function getSales(limit?: number): Promise<Sale[]> {
+    try {
+        let query = supabase
+            .from('sales')
+            .select('*')
+            .order('created_at', { ascending: false })
+
+        if (limit) {
+            query = query.limit(limit)
+        }
+
+        const { data, error } = await query
+
+        if (error) throw error
+
+        return data?.map(sale => ({
+            id: sale.id,
+            date: sale.date,
+            time: sale.time,
+            customer: sale.customer,
+            totalAmount: sale.total_amount,
+            paymentMethod: sale.payment_method,
+            status: sale.status,
+        })) || []
+    } catch (err) {
+        console.error('Error fetching sales:', err)
+        return []
+    }
+}
+
+export async function getSaleById(id: string): Promise<Sale | null> {
+    try {
+        const { data, error } = await supabase
+            .from('sales')
+            .select('*')
+            .eq('id', id)
+            .single()
+
+        if (error) throw error
+
+        return {
+            id: data.id,
+            date: data.date,
+            time: data.time,
+            customer: data.customer,
+            totalAmount: data.total_amount,
+            paymentMethod: data.payment_method,
+            status: data.status,
+        }
+    } catch (err) {
+        console.error('Error fetching sale:', err)
+        return null
+    }
+}
+
+export async function getSaleItems(saleId: string): Promise<SaleItem[]> {
+    try {
+        const { data, error } = await supabase
+            .from('sale_items')
+            .select('*')
+            .eq('sale_id', saleId)
+
+        if (error) throw error
+
+        return data?.map(item => ({
+            id: item.id,
+            saleId: item.sale_id,
+            productId: item.product_id,
+            productName: item.product_name,
+            quantity: item.quantity,
+            unitPrice: item.unit_price,
+            subtotal: item.subtotal,
+        })) || []
+    } catch (err) {
+        console.error('Error fetching sale items:', err)
+        return []
+    }
+}
+
+export async function createSale(
+    cart: CartItem[],
+    paymentMethod: 'Cash' | 'Card',
+    customer?: string
+): Promise<Sale> {
+    const now = new Date()
+    const date = now.toISOString().split('T')[0]
+    const time = now.toTimeString().split(' ')[0].substring(0, 5)
+    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+    const totalWithTax = totalAmount * 1.085 // 8.5% tax
+    const transactionId = `TXN-${Date.now()}`
+
+    try {
+        // Create sale
+        const { data: saleData, error: saleError } = await supabase
+            .from('sales')
+            .insert({
+                id: transactionId,
+                date,
+                time,
+                customer: customer || 'Walk-in Customer',
+                total_amount: totalWithTax,
+                payment_method: paymentMethod,
+                status: 'Completed',
+            })
+            .select()
+            .single()
+
+        if (saleError) throw saleError
+
+        // Create sale items and update stock
+        for (const item of cart) {
+            const { error: itemError } = await supabase
+                .from('sale_items')
+                .insert({
+                    sale_id: transactionId,
+                    product_id: item.id,
+                    product_name: item.name,
+                    quantity: item.quantity,
+                    unit_price: item.price,
+                    subtotal: item.price * item.quantity,
+                })
+
+            if (itemError) throw itemError
+
+            // Update product stock
+            await updateStock(item.id, -item.quantity)
+        }
+
+        return {
+            id: saleData.id,
+            date: saleData.date,
+            time: saleData.time,
+            customer: saleData.customer,
+            totalAmount: saleData.total_amount,
+            paymentMethod: saleData.payment_method,
+            status: saleData.status,
+        }
+    } catch (err) {
+        console.error('Error creating sale:', err)
+        throw err
+    }
+}
+
+export async function getSalesByDateRange(startDate: string, endDate: string): Promise<Sale[]> {
+    try {
+        const { data, error } = await supabase
+            .from('sales')
+            .select('*')
+            .gte('date', startDate)
+            .lte('date', endDate)
+            .order('created_at', { ascending: false })
+
+        if (error) throw error
+
+        return data?.map(sale => ({
+            id: sale.id,
+            date: sale.date,
+            time: sale.time,
+            customer: sale.customer,
+            totalAmount: sale.total_amount,
+            paymentMethod: sale.payment_method,
+            status: sale.status,
+        })) || []
+    } catch (err) {
+        console.error('Error fetching sales by date range:', err)
+        return []
+    }
+}
+
+export async function getTodaysSales(): Promise<Sale[]> {
+    const today = new Date().toISOString().split('T')[0]
+    return getSalesByDateRange(today, today)
+}
+
+export async function getSalesStats() {
+    const sales = await getSales()
+    const totalSales = sales.reduce((sum, sale) => sum + sale.totalAmount, 0)
+    const totalTransactions = sales.length
+    const averageOrderValue = totalTransactions > 0 ? totalSales / totalTransactions : 0
+
+    return {
+        totalSales,
+        totalTransactions,
+        averageOrderValue,
+    }
+}
