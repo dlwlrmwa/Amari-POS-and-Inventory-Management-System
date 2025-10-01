@@ -94,6 +94,15 @@ export function POSInterface() {
     return cart.reduce((total, item) => total + item.price * item.quantity, 0)
   }
 
+  const VAT_RATE = 0.12
+  const VAT_INCLUSIVE_MULTIPLIER = 1 / (1 + VAT_RATE)
+
+  const getVatBreakdown = (total: number) => {
+    const subtotal = total * VAT_INCLUSIVE_MULTIPLIER
+    const vatAmount = total - subtotal
+    return { subtotal, vatAmount }
+  }
+
   const getTotalItems = () => {
     return cart.reduce((total, item) => total + item.quantity, 0)
   }
@@ -108,7 +117,7 @@ export function POSInterface() {
       await createSale(cart, paymentMethod)
 
       // Show success message
-      const total = getTotalAmount() * 1.085
+      const total = getTotalAmount()
       alert(`Transaction completed!\nTotal: ₱${total.toFixed(2)}\nPayment: ${paymentMethod}`)
 
       // Clear cart and close dialog
@@ -271,17 +280,17 @@ export function POSInterface() {
         {cart.length > 0 && (
           <div className="space-y-4">
             <div className="border-t pt-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-muted-foreground">Items ({getTotalItems()})</span>
-                <span className="font-medium">₱{getTotalAmount().toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-muted-foreground">Tax (8.5%)</span>
-                <span className="font-medium">₱{(getTotalAmount() * 0.085).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
+              <div className="flex justify-between items-center text-lg font-bold mb-2">
                 <span>Total</span>
-                <span className="text-primary">₱{(getTotalAmount() * 1.085).toFixed(2)}</span>
+                <span className="text-primary">₱{getTotalAmount().toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">VAT-Exempt</span>
+                <span className="font-medium text-sm">₱{getVatBreakdown(getTotalAmount()).subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">VAT (12%)</span>
+                <span className="font-medium text-sm">₱{getVatBreakdown(getTotalAmount()).vatAmount.toFixed(2)}</span>
               </div>
             </div>
 
@@ -309,7 +318,7 @@ export function POSInterface() {
                       </div>
                     ))}
                     <div className="border-t mt-2 pt-2 font-bold">
-                      Total: ₱{(getTotalAmount() * 1.085).toFixed(2)}
+                      Total: ₱{getTotalAmount().toFixed(2)}
                     </div>
                   </div>
                   <div className="flex space-x-2">

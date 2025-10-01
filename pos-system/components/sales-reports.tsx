@@ -7,12 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   BarChart,
   Bar,
   XAxis,
@@ -32,12 +26,14 @@ import {
   FileText,
   FileSpreadsheet,
 } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 import type { Sale } from "@/lib/supabase/client"
 import { getSales, getSalesStats } from "@/lib/data/sales"
-import { exportSalesToExcel, exportSalesToPDF } from "@/lib/utils/export"
+import { exportSalesToExcel } from "@/lib/utils/export"
 import { supabase } from "@/lib/supabase/client"
 
 export function SalesReports() {
+  const { toast } = useToast()
   const [sales, setSales] = useState<Sale[]>([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
@@ -49,6 +45,7 @@ export function SalesReports() {
   const [selectedChart, setSelectedChart] = useState("sales")
   const [chartData, setChartData] = useState<any[]>([])
   const [topProducts, setTopProducts] = useState<any[]>([])
+  const [growthRate, setGrowthRate] = useState(0)
 
   useEffect(() => {
     loadSales()
@@ -91,22 +88,41 @@ export function SalesReports() {
 
       if (productError) throw productError
       setTopProducts(productData || [])
+
+      // Growth rate (compare last 2 periods)
+      if (dailyData && dailyData.length >= 2) {
+        const last = dailyData[dailyData.length - 1].total_sales
+        const prev = dailyData[dailyData.length - 2].total_sales
+        if (prev > 0) {
+          setGrowthRate(((last - prev) / prev) * 100)
+        }
+      }
     } catch (error) {
       console.error("Error loading reports:", error)
     }
   }
 
-  const handleExportExcel = () => {
-    exportSalesToExcel(sales, "sales-report")
+  const handleExportExcel = async () => {
+    try {
+      await exportSalesToExcel(sales, "sales-report")
+      toast({
+        title: "Export Successful",
+        description: "Your sales report has been downloaded as an Excel file.",
+      })
+    } catch (error) {
+      console.error("Failed to export:", error)
+      toast({
+        title: "Export Failed",
+        description: "Could not generate the Excel file. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleExportPDF = () => {
-    exportSalesToPDF(sales, "sales-report")
-  }
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center">
+      <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p>Loading sales data...</p>
@@ -116,7 +132,7 @@ export function SalesReports() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-background">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -134,24 +150,10 @@ export function SalesReports() {
             </SelectContent>
           </Select>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="bg-transparent">
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={handleExportExcel}>
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Export to Excel
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportPDF}>
-                <FileText className="h-4 w-4 mr-2" />
-                Export to PDF
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button variant="outline" onClick={handleExportExcel} className="bg-transparent">
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
         </div>
       </div>
 
@@ -196,7 +198,10 @@ export function SalesReports() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">+12.5%</div>
+            <div className={`text-2xl font-bold ${growthRate >= 0 ? "text-green-600" : "text-red-600"}`}>
+              {growthRate >= 0 ? "+" : ""}
+              {growthRate.toFixed(2)}%
+            </div>
             <p className="text-xs text-muted-foreground">vs last period</p>
           </CardContent>
         </Card>
@@ -232,7 +237,7 @@ export function SalesReports() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
-                  <Tooltip formatter={(value) => [`₱${value}`, "Sales"]} />
+                  <Tooltip formatter={(value) => [`₱${Number(value).toFixed(2)}`, "Sales"]} />
                   <Bar dataKey="total_sales" fill="hsl(var(--primary))" />
                 </BarChart>
               ) : (
@@ -333,7 +338,7 @@ export function SalesReports() {
                     <TableCell className="font-bold">₱{transaction.totalAmount.toFixed(2)}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={transaction.paymentMethod === "Card" ? "default" : "secondary"}
+                        variant={transaction.paymentMethod === "Card" ? "default" : "default"}
                       >
                         {transaction.paymentMethod}
                       </Badge>

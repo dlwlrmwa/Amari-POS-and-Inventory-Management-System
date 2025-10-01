@@ -88,8 +88,7 @@ export async function createSale(
     const now = new Date()
     const date = now.toISOString().split('T')[0]
     const time = now.toTimeString().split(' ')[0].substring(0, 5)
-    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-    const totalWithTax = totalAmount * 1.085 // 8.5% tax
+    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0) // VAT already included
     const transactionId = `TXN-${Date.now()}`
 
     try {
@@ -101,7 +100,7 @@ export async function createSale(
                 date,
                 time,
                 customer: customer || 'Walk-in Customer',
-                total_amount: totalWithTax,
+                total_amount: totalAmount,
                 payment_method: paymentMethod,
                 status: 'Completed',
             })

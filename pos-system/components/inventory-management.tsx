@@ -258,7 +258,7 @@ export function InventoryManagement() {
                     <Input
                       id="price"
                       type="number"
-                      step="0.01"
+                      step="1"
                       value={newProduct.price}
                       onChange={(e) => setNewProduct({ ...newProduct, price: Number.parseFloat(e.target.value) })}
                       placeholder="0.00"

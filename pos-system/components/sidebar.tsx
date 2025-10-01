@@ -18,7 +18,7 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
       id: "dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
-      roles: ["manager", "admin"],
+      roles: ["manager", "admin", "cashier"],
     },
     {
       id: "pos",
@@ -56,8 +56,8 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
             <ShoppingCart className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-sidebar-foreground">POS System</h1>
-            <p className="text-sm text-muted-foreground">Point of Sale</p>
+            <h1 className="text-lg font-bold text-sidebar-foreground">Amari Scoops & Savors</h1>
+            <p className="text-sm text-muted-foreground">POS with Inventory Management</p>
           </div>
         </div>
       </div>
