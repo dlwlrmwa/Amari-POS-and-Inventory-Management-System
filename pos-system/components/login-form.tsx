@@ -1,14 +1,13 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth"
-import { ShoppingCart } from "lucide-react"
+import Image from "next/image" // ✅ Added for your logo
 
 export function LoginForm() {
   const [username, setUsername] = useState("")
@@ -33,14 +32,25 @@ export function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          {/* ✅ Replace cart icon with logo image */}
           <div className="flex justify-center mb-4">
-            <div className="bg-primary rounded-full p-3">
-              <ShoppingCart className="h-8 w-8 text-primary-foreground" />
+            <div className="bg-gradient-to-br from-pink-300 via-violet-300 to-pink-200 rounded-full p-3 flex items-center justify-center shadow-sm">
+              <Image
+                src="/amari-logo1.png" // Make sure it's in your /public folder
+                alt="Amari's Scoops & Savours Logo"
+                width={64}
+                height={64}
+                className="object-contain rounded-full"
+              />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Amari's Scoops & Savours</CardTitle>
+
+          <CardTitle className="text-2xl font-bold text-primary">
+            Amari's Scoops & Savours
+          </CardTitle>
           <CardDescription>Sign in to access the system</CardDescription>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -65,11 +75,14 @@ export function LoginForm() {
                 required
               />
             </div>
+
             {error && <div className="text-destructive text-sm text-center">{error}</div>}
+
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
+
           <div className="mt-6 text-sm text-muted-foreground">
             <p className="text-center mb-2">Demo Credentials:</p>
             <div className="space-y-1 text-xs">

@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth"
 import { LayoutDashboard, ShoppingCart, Package, BarChart3, Settings, LogOut, User } from "lucide-react"
+import Image from "next/image" // Correct import for the Next.js Image component
 
 interface SidebarProps {
   activeView: string
@@ -52,8 +53,14 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
     <div className="w-64 bg-sidebar border-r border-sidebar-border h-screen flex flex-col">
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center space-x-3">
-          <div className="bg-primary rounded-lg p-2">
-            <ShoppingCart className="h-6 w-6 text-primary-foreground" />
+          <div className="rounded-lg">
+            <Image // Using the correctly imported Image component
+              src="/amari-logo1.png" // Correct path if amari-logo.png is directly in the 'public' folder
+              alt="Amari's Scoops & Savours Logo"
+              width={100} // Adjust width as needed
+              height={100} // Adjust height as needed
+              className="object-contain"
+            />
           </div>
           <div>
             <h1 className="text-lg font-bold text-sidebar-foreground">Amari Scoops & Savors</h1>
