@@ -22,6 +22,7 @@ export interface CartItem {
     name: string
     price: number
     quantity: number
+    image: string
 }
 
 export interface Sale {
@@ -30,8 +31,10 @@ export interface Sale {
     time: string
     customer?: string
     totalAmount: number
-    paymentMethod: string
+    paymentMethod: "Cash" | "E-Payment"
+    paymentSubMethod?: "GCash" | "Maya"
     status: string
+    items?: SaleItem[]
 }
 
 export interface SaleItem {

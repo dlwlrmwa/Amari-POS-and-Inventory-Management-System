@@ -82,26 +82,47 @@ export async function getSaleItems(saleId: string): Promise<SaleItem[]> {
 
 export async function createSale(
     cart: CartItem[],
-    paymentMethod: 'Cash' | 'Card',
+    paymentMethod: "Cash" | "E-Payment",
+    paymentSubMethod?: "GCash" | "Maya",
     customer?: string
 ): Promise<Sale> {
     const now = new Date()
     const date = now.toISOString().split('T')[0]
     const time = now.toTimeString().split(' ')[0].substring(0, 5)
-    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0) // VAT already included
-    const transactionId = `TXN-${Date.now()}`
+    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+
+    // Fetch the last transaction ID to generate a new one
+    const { data: lastSale, error: lastSaleError } = await supabase
+        .from('sales')
+        .select('id')
+        .order('id', { ascending: false })
+        .limit(1)
+        .single()
+
+    if (lastSaleError && lastSaleError.code !== 'PGRST116') { // Ignore 'range not found' error for the first sale
+        throw lastSaleError
+    }
+
+    let newTransactionId: string
+    if (lastSale) {
+        const lastIdNumber = parseInt(lastSale.id.split('-')[1], 10)
+        const newIdNumber = lastIdNumber + 1
+        newTransactionId = `TXN-${newIdNumber.toString().padStart(4, '0')}`
+    } else {
+        newTransactionId = 'TXN-0001'
+    }
 
     try {
-        // Create sale
         const { data: saleData, error: saleError } = await supabase
             .from('sales')
             .insert({
-                id: transactionId,
+                id: newTransactionId,
                 date,
                 time,
                 customer: customer || 'Walk-in Customer',
                 total_amount: totalAmount,
                 payment_method: paymentMethod,
+                payment_sub_method: paymentSubMethod,
                 status: 'Completed',
             })
             .select()
@@ -109,22 +130,29 @@ export async function createSale(
 
         if (saleError) throw saleError
 
-        // Create sale items and update stock
+        const saleItems: SaleItem[] = cart.map(item => ({
+            saleId: newTransactionId,
+            productId: item.id,
+            productName: item.name,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            subtotal: item.price * item.quantity,
+        }))
+
+        const { error: itemError } = await supabase.from('sale_items').insert(
+            saleItems.map(item => ({
+                sale_id: item.saleId,
+                product_id: item.productId,
+                product_name: item.productName,
+                quantity: item.quantity,
+                unit_price: item.unitPrice,
+                subtotal: item.subtotal,
+            }))
+        )
+
+        if (itemError) throw itemError
+
         for (const item of cart) {
-            const { error: itemError } = await supabase
-                .from('sale_items')
-                .insert({
-                    sale_id: transactionId,
-                    product_id: item.id,
-                    product_name: item.name,
-                    quantity: item.quantity,
-                    unit_price: item.price,
-                    subtotal: item.price * item.quantity,
-                })
-
-            if (itemError) throw itemError
-
-            // Update product stock
             await updateStock(item.id, -item.quantity)
         }
 
@@ -135,7 +163,9 @@ export async function createSale(
             customer: saleData.customer,
             totalAmount: saleData.total_amount,
             paymentMethod: saleData.payment_method,
+            paymentSubMethod: saleData.payment_sub_method,
             status: saleData.status,
+            items: saleItems,
         }
     } catch (err) {
         console.error('Error creating sale:', err)

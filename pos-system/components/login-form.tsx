@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth"
-import Image from "next/image" // ✅ Added for your logo
+import Image from "next/image"
 
 export function LoginForm() {
   const [username, setUsername] = useState("")
@@ -29,14 +29,13 @@ export function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 md:p-6">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          {/* ✅ Replace cart icon with logo image */}
           <div className="flex justify-center mb-4">
             <div className="bg-gradient-to-br from-pink-300 via-violet-300 to-pink-200 rounded-full p-3 flex items-center justify-center shadow-sm">
               <Image
-                src="/amari-logo1.png" // Make sure it's in your /public folder
+                src="/amari-logo1.png"
                 alt="Amari's Scoops & Savours Logo"
                 width={64}
                 height={64}

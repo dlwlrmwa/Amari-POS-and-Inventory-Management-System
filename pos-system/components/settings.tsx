@@ -11,31 +11,50 @@ import { Store, Users, Bell, Shield } from "lucide-react"
 import { supabase } from "@/lib/supabase/client"
 
 export function Settings() {
-  const [newUsername, setNewUsername] = useState("")
-  const [newUserName, setNewUserName] = useState("") // ✅ NEW full name field
-  const [newUserRole, setNewUserRole] = useState<"cashier" | "manager" | "admin">("cashier")
-  const [newUserPassword, setNewUserPassword] = useState("")
+  const [newUser, setNewUser] = useState({
+    firstName: "",
+    lastName: "",
+    username: "",
+    password: "",
+    role: "cashier" as "cashier" | "manager" | "admin",
+  })
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target
+    setNewUser((prev) => ({ ...prev, [id]: value }))
+  }
+
+  const handleRoleChange = (value: "cashier" | "manager" | "admin") => {
+    setNewUser((prev) => ({ ...prev, role: value }))
+  }
 
   const handleAddUser = async () => {
-    if (!newUsername || !newUserName || !newUserPassword || !newUserRole) {
+    const { firstName, lastName, username, password, role } = newUser
+    if (!firstName || !lastName || !username || !password || !role) {
       alert("Please fill in all fields for the new user.")
       return
     }
 
     try {
-      const { error } = await supabase
-        .from("users")
-        .insert([
-          { username: newUsername, name: newUserName, role: newUserRole, password: newUserPassword },
-        ])
+      const { error } = await supabase.from("users").insert([
+        {
+          name: `${firstName} ${lastName}`,
+          username,
+          password, // Note: In a real app, hash the password before storing
+          role,
+        },
+      ])
 
       if (error) throw error
 
-      alert(`User "${newUsername}" created successfully!`)
-      setNewUsername("")
-      setNewUserName("")
-      setNewUserPassword("")
-      setNewUserRole("cashier")
+      alert(`User "${username}" created successfully!`)
+      setNewUser({
+        firstName: "",
+        lastName: "",
+        username: "",
+        password: "",
+        role: "cashier",
+      })
     } catch (error: any) {
       console.error("Error adding user:", error)
       alert(`Failed to add user: ${error.message}`)
@@ -43,46 +62,14 @@ export function Settings() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">Settings</h1>
         <p className="text-muted-foreground">Manage your POS system configuration and preferences</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Store Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Store className="h-5 w-5" />
-              <span>Store Information</span>
-            </CardTitle>
-            <CardDescription>Update your store details and business information</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="store-name">Store Name</Label>
-              <Input id="store-name" defaultValue="Amari's Scoops & Savours" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="store-address">Address</Label>
-              <Input id="store-address" defaultValue="123 Main Street, City, State 12345" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="store-phone">Phone</Label>
-                <Input id="store-phone" defaultValue="(555) 123-4567" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="store-email">Email</Label>
-                <Input id="store-email" defaultValue="store@example.com" />
-              </div>
-            </div>
-            <Button>Save Changes</Button>
-          </CardContent>
-        </Card>
-
         {/* User Management */}
         <Card>
           <CardHeader>
@@ -93,30 +80,27 @@ export function Settings() {
             <CardDescription>Manage user accounts and permissions</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-username">Username</Label>
-              <Input
-                id="new-username"
-                placeholder="Enter username"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input id="firstName" placeholder="Juan" value={newUser.firstName} onChange={handleInputChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input id="lastName" placeholder="Dela Cruz" value={newUser.lastName} onChange={handleInputChange} />
+              </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-name">Full Name</Label>
-              <Input
-                id="new-name"
-                placeholder="Enter full name"
-                value={newUserName}
-                onChange={(e) => setNewUserName(e.target.value)}
-              />
+              <Label htmlFor="username">Username</Label>
+              <Input id="username" placeholder="juandelacruz" value={newUser.username} onChange={handleInputChange} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="user-role">Role</Label>
-              <Select
-                value={newUserRole}
-                onValueChange={(value: "cashier" | "manager" | "admin") => setNewUserRole(value)}
-              >
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" type="password" placeholder="Enter password" value={newUser.password} onChange={handleInputChange} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Select value={newUser.role} onValueChange={handleRoleChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
@@ -126,16 +110,6 @@ export function Settings() {
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="user-password">Password</Label>
-              <Input
-                id="user-password"
-                type="password"
-                placeholder="Enter password"
-                value={newUserPassword}
-                onChange={(e) => setNewUserPassword(e.target.value)}
-              />
             </div>
             <Button onClick={handleAddUser}>Add User</Button>
           </CardContent>
@@ -175,42 +149,6 @@ export function Settings() {
           </CardContent>
         </Card>
 
-        {/* Security */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Shield className="h-5 w-5" />
-              <span>Security</span>
-            </CardTitle>
-            <CardDescription>Security and access control settings</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="session-timeout">Session Timeout (minutes)</Label>
-              <Select defaultValue="30">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="15">15 minutes</SelectItem>
-                  <SelectItem value="30">30 minutes</SelectItem>
-                  <SelectItem value="60">1 hour</SelectItem>
-                  <SelectItem value="120">2 hours</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="two-factor">Two-Factor Authentication</Label>
-                <p className="text-sm text-muted-foreground">Add extra security to your account</p>
-              </div>
-              <Switch id="two-factor" />
-            </div>
-            <Button variant="outline" className="w-full bg-transparent">
-              Change Password
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

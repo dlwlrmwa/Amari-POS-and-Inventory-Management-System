@@ -132,11 +132,11 @@ export function SalesReports() {
   }
 
   return (
-    <div className="p-6 space-y-6 bg-background">
+    <div className="p-4 md:p-6 space-y-6 bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Sales Reports</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Sales Reports</h1>
           <p className="text-muted-foreground">Analyze your sales performance and trends</p>
         </div>
         <div className="flex items-center space-x-2">
@@ -158,7 +158,7 @@ export function SalesReports() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
@@ -212,7 +212,7 @@ export function SalesReports() {
         {/* Sales Chart */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
                 <CardTitle>Sales Overview</CardTitle>
                 <CardDescription>
@@ -220,7 +220,7 @@ export function SalesReports() {
                 </CardDescription>
               </div>
               <Select value={selectedChart} onValueChange={setSelectedChart}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-full sm:w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -313,48 +313,50 @@ export function SalesReports() {
           {sales.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">No transactions yet</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Transaction ID</TableHead>
-                  <TableHead>Date & Time</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sales.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="font-mono text-sm">{transaction.id}</TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{transaction.date}</p>
-                        <p className="text-sm text-muted-foreground">{transaction.time}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>{transaction.customer || "Walk-in"}</TableCell>
-                    <TableCell className="font-bold">₱{transaction.totalAmount.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={transaction.paymentMethod === "Card" ? "default" : "default"}
-                      >
-                        {transaction.paymentMethod}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="default"
-                        className="bg-green-100 text-green-800 border-green-200"
-                      >
-                        {transaction.status}
-                      </Badge>
-                    </TableCell>
+            <div className="relative w-full overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Transaction ID</TableHead>
+                    <TableHead>Date & Time</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {sales.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="font-mono text-sm">{transaction.id}</TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{transaction.date}</p>
+                          <p className="text-sm text-muted-foreground">{transaction.time}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>{transaction.customer || "Walk-in"}</TableCell>
+                      <TableCell className="font-bold">₱{transaction.totalAmount.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={transaction.paymentMethod === "E-Payment" ? "default" : "default"}
+                        >
+                          {transaction.paymentMethod}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="default"
+                          className="bg-green-100 text-green-800 border-green-200"
+                        >
+                          {transaction.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

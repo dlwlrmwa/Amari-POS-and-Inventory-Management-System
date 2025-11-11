@@ -209,11 +209,11 @@ export function InventoryManagement() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Inventory Management</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Inventory Management</h1>
           <p className="text-muted-foreground">Manage your products and stock levels</p>
         </div>
         <div className="flex gap-2">
@@ -228,12 +228,12 @@ export function InventoryManagement() {
                 Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New Product</DialogTitle>
                 <DialogDescription>Enter the details for the new product</DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-4 p-1">
                 <div className="space-y-2">
                   <Label htmlFor="name">Product Name</Label>
                   <Input
@@ -326,132 +326,134 @@ export function InventoryManagement() {
           <CardDescription>Manage your product inventory and stock levels</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((product) => {
-                const status = getStockStatus(product)
-                return (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <img
-                          src={product.image || "/placeholder.svg"}
-                          alt={product.name}
-                          className="w-10 h-10 rounded-lg object-cover bg-muted"
-                        />
-                        <div>
-                          <p className="font-medium">{product.name}</p>
+          <div className="relative w-full overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Stock</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products.map((product) => {
+                  const status = getStockStatus(product)
+                  return (
+                    <TableRow key={product.id}>
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <img
+                            src={product.image || "/placeholder.svg"}
+                            alt={product.name}
+                            className="w-10 h-10 rounded-lg object-cover bg-muted"
+                          />
+                          <div>
+                            <p className="font-medium">{product.name}</p>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">{product.sku}</TableCell>
-                    <TableCell>{product.category}</TableCell>
-                    <TableCell className="font-medium">₱{product.price.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium">{product.stock}</span>
-                        <span className="text-muted-foreground text-sm">/ {product.minStock} min</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={status.variant}>{status.label}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRestock(product.id, 10)}
-                          className="bg-transparent"
-                        >
-                          +10
-                        </Button>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="sm" onClick={() => setEditingProduct({ ...product })}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-md">
-                            <DialogHeader>
-                              <DialogTitle>Edit Product</DialogTitle>
-                              <DialogDescription>Update product information</DialogDescription>
-                            </DialogHeader>
-                            {editingProduct && (
-                              <div className="space-y-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-name">Product Name</Label>
-                                  <Input
-                                    id="edit-name"
-                                    value={editingProduct.name}
-                                    onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                                  />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">{product.sku}</TableCell>
+                      <TableCell>{product.category}</TableCell>
+                      <TableCell className="font-medium">₱{product.price.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium">{product.stock}</span>
+                          <span className="text-muted-foreground text-sm">/ {product.minStock} min</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={status.variant}>{status.label}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRestock(product.id, 10)}
+                            className="bg-transparent"
+                          >
+                            +10
+                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm" onClick={() => setEditingProduct({ ...product })}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle>Edit Product</DialogTitle>
+                                <DialogDescription>Update product information</DialogDescription>
+                              </DialogHeader>
+                              {editingProduct && (
+                                <div className="space-y-4 p-1">
                                   <div className="space-y-2">
-                                    <Label htmlFor="edit-price">Price</Label>
+                                    <Label htmlFor="edit-name">Product Name</Label>
                                     <Input
-                                      id="edit-price"
-                                      type="number"
-                                      step="0.01"
-                                      value={editingProduct.price}
-                                      onChange={(e) =>
-                                        setEditingProduct({
-                                          ...editingProduct,
-                                          price: Number.parseFloat(e.target.value),
-                                        })
-                                      }
+                                      id="edit-name"
+                                      value={editingProduct.name}
+                                      onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
                                     />
                                   </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="edit-stock">Stock</Label>
-                                    <Input
-                                      id="edit-stock"
-                                      type="number"
-                                      value={editingProduct.stock}
-                                      onChange={(e) =>
-                                        setEditingProduct({ ...editingProduct, stock: Number.parseInt(e.target.value) })
-                                      }
-                                    />
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="edit-price">Price</Label>
+                                      <Input
+                                        id="edit-price"
+                                        type="number"
+                                        step="0.01"
+                                        value={editingProduct.price}
+                                        onChange={(e) =>
+                                          setEditingProduct({
+                                            ...editingProduct,
+                                            price: Number.parseFloat(e.target.value),
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="edit-stock">Stock</Label>
+                                      <Input
+                                        id="edit-stock"
+                                        type="number"
+                                        value={editingProduct.stock}
+                                        onChange={(e) =>
+                                          setEditingProduct({ ...editingProduct, stock: Number.parseInt(e.target.value) })
+                                        }
+                                      />
+                                    </div>
                                   </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="edit-image">Change Image</Label>
+                                    <Input id="edit-image" type="file" accept="image/*" onChange={(e) => setEditImageFile(e.target.files?.[0] || null)} />
+                                  </div>
+                                  <Button onClick={handleEditProduct} className="w-full">
+                                    Update Product
+                                  </Button>
                                 </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-image">Change Image</Label>
-                                  <Input id="edit-image" type="file" accept="image/*" onChange={(e) => setEditImageFile(e.target.files?.[0] || null)} />
-                                </div>
-                                <Button onClick={handleEditProduct} className="w-full">
-                                  Update Product
-                                </Button>
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteProduct(product.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
+                              )}
+                            </DialogContent>
+                          </Dialog>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
