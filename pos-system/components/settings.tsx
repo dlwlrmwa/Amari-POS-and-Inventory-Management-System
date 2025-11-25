@@ -69,7 +69,7 @@ export function Settings() {
         <p className="text-muted-foreground">Manage your POS system configuration and preferences</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* User Management */}
         <Card>
           <CardHeader>
@@ -80,7 +80,7 @@ export function Settings() {
             <CardDescription>Manage user accounts and permissions</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
                 <Input id="firstName" placeholder="Juan" value={newUser.firstName} onChange={handleInputChange} />

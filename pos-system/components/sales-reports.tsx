@@ -56,7 +56,7 @@ export function SalesReports() {
     try {
       setLoading(true)
       const [salesData, statsData] = await Promise.all([
-        getSales(20), // last 20 transactions
+        getSales(10), // last 10 transactions
         getSalesStats(),
       ])
       setSales(salesData)
@@ -225,7 +225,6 @@ export function SalesReports() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="sales">Sales (₱)</SelectItem>
-                  <SelectItem value="transactions">Transactions</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -313,50 +312,80 @@ export function SalesReports() {
           {sales.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">No transactions yet</div>
           ) : (
-            <div className="relative w-full overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Transaction ID</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Payment</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sales.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell className="font-mono text-sm">{transaction.id}</TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{transaction.date}</p>
-                          <p className="text-sm text-muted-foreground">{transaction.time}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>{transaction.customer || "Walk-in"}</TableCell>
-                      <TableCell className="font-bold">₱{transaction.totalAmount.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={transaction.paymentMethod === "E-Payment" ? "default" : "default"}
-                        >
-                          {transaction.paymentMethod}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
+            <>
+              {/* Mobile View - Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
+                {sales.map((transaction) => (
+                  <Card key={transaction.id}>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <span className="font-mono text-sm">{transaction.id}</span>
                         <Badge
                           variant="default"
                           className="bg-green-100 text-green-800 border-green-200"
                         >
                           {transaction.status}
                         </Badge>
-                      </TableCell>
+                      </div>
+                      <div>
+                        <p className="font-bold text-lg">₱{transaction.totalAmount.toFixed(2)}</p>
+                        <p className="text-sm text-muted-foreground">{transaction.customer || "Walk-in"}</p>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        <p>{transaction.date} - {transaction.time}</p>
+                        <p>Payment: {transaction.paymentMethod}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Desktop View - Table */}
+              <div className="hidden md:block relative w-full overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Transaction ID</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Payment</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {sales.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell className="font-mono text-sm">{transaction.id}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{transaction.date}</p>
+                            <p className="text-sm text-muted-foreground">{transaction.time}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{transaction.customer || "Walk-in"}</TableCell>
+                        <TableCell className="font-bold">₱{transaction.totalAmount.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={transaction.paymentMethod === "E-Payment" ? "default" : "default"}
+                          >
+                            {transaction.paymentMethod}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="default"
+                            className="bg-green-100 text-green-800 border-green-200"
+                          >
+                            {transaction.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

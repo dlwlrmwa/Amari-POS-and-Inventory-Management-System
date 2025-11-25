@@ -43,7 +43,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (error || !data) return false
 
-    // ⚠️ Replace with hashed password check in production
     if (data.password === password) {
       const userObj: User = { id: data.id, username: data.username, role: data.role, name: data.name }
       setUser(userObj)
