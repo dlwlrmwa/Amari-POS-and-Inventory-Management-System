@@ -54,11 +54,11 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center space-x-3">
           <div className="rounded-lg">
-            <Image // Using the correctly imported Image component
-              src="/amari-logo1.png" // Correct path if amari-logo.png is directly in the 'public' folder
+            <Image
+              src="/amari-logo1.png"
               alt="Amari's Scoops & Savours Logo"
-              width={100} // Adjust width as needed
-              height={100} // Adjust height as needed
+              width={100}
+              height={100}
               className="object-contain"
             />
           </div>

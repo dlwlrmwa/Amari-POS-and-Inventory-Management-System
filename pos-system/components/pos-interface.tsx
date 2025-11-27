@@ -77,62 +77,52 @@ export function POSInterface() {
     return matchesSearch && matchesCategory
   })
 
-  const addToCart = (product: Product) => {
-    // Check if product is out of stock
+  const addToCart = async (product: Product) => {
     if (product.stock <= 0) {
       alert(`Sorry, "${product.name}" is out of stock!`)
       return
     }
 
-    setCart((prev: CartItem[]) => {
-      const existingItem = prev.find((item: CartItem) => item.id === product.id)
-
-      // Check if adding would exceed stock
+    setCart((prev) => {
+      const existingItem = prev.find((item) => item.id === product.id)
       if (existingItem) {
         const newQuantity = existingItem.quantity + 1
         if (newQuantity > product.stock) {
           alert(`Cannot add more "${product.name}". Only ${product.stock} available in stock!`)
-          return prev // Return unchanged cart
+          return prev
         }
-        return prev.map((item: CartItem) =>
+        return prev.map((item) =>
           item.id === product.id ? { ...item, quantity: newQuantity } : item
         )
       }
-
-      // First time adding - check if stock is available
-      if (product.stock < 1) {
-        alert(`Sorry, "${product.name}" is out of stock!`)
-        return prev
-      }
-
       return [...prev, { id: product.id, name: product.name, price: product.price, quantity: 1, image: product.image }]
     })
   }
 
-  const updateQuantity = (id: number, change: number) => {
-    setCart((prev: CartItem[]) => {
-      const item = prev.find((item: CartItem) => item.id === id)
-      if (!item) return prev
+  const updateQuantity = async (id: number, change: number) => {
+    const cartItem = cart.find(item => item.id === id)
+    if (!cartItem) return
 
-      const newQuantity = item.quantity + change
+    const product = products.find(p => p.id === id)
+    if (!product) return
 
-      // Find the product to check stock
-      const product = products.find((p: Product) => p.id === id)
+    const newQuantity = cartItem.quantity + change
 
-      if (change > 0 && product) {
-        // Increasing quantity - check stock
-        if (newQuantity > product.stock) {
-          alert(`Cannot add more "${item.name}". Only ${product.stock} available in stock!`)
-          return prev // Return unchanged cart
-        }
-      }
+    if (newQuantity <= 0) {
+      setCart(prev => prev.filter(item => item.id !== id))
+      return
+    }
 
-      return prev
-        .map((item: CartItem) =>
-          item.id === id ? { ...item, quantity: Math.max(0, newQuantity) } : item
-        )
-        .filter((item: CartItem) => item.quantity > 0)
-    })
+    if (newQuantity > product.stock) {
+      alert(`Cannot add more "${product.name}". Only ${product.stock} available in stock!`)
+      return
+    }
+
+    setCart(prev =>
+      prev.map(item =>
+        item.id === id ? { ...item, quantity: newQuantity } : item
+      )
+    )
   }
 
   const removeFromCart = (id: number) => {
@@ -230,7 +220,7 @@ export function POSInterface() {
 
       {cart.length > 0 && (
         <div className="p-6 border-t">
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
               <div className="flex justify-between items-center text-lg font-bold mb-2">
                 <span>Total</span>
@@ -252,62 +242,98 @@ export function POSInterface() {
                   <CreditCard className="h-4 w-4 mr-2" /> Checkout
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg">
+              <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
                 <DialogHeader>
                   <DialogTitle>Complete Transaction</DialogTitle>
                   <DialogDescription>Review your order and select a payment method.</DialogDescription>
                 </DialogHeader>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Order Summary */}
-                  <div className="space-y-3">
-                    <h4 className="font-medium">Order Summary</h4>
-                    <div className="bg-muted p-3 rounded-lg max-h-60 overflow-y-auto space-y-2">
-                      {cart.map((item: CartItem) => (
-                        <div key={item.id} className="flex items-center justify-between text-sm">
-                          <div className="flex items-center space-x-2">
-                            <img src={item.image || "/placeholder.svg"} alt={item.name} className="w-8 h-8 rounded-md object-cover bg-background" />
-                            <span>{item.name} x{item.quantity}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-y-auto p-2">
+                  {/* Left Side - Receipt Preview */}
+                  <div className="space-y-3 flex flex-col">
+                    <h4 className="font-medium text-center">Receipt Preview</h4>
+                    <div ref={receiptRef} className="p-8 text-sm bg-white text-black border rounded-lg shadow-sm">
+                      <div className="text-center mb-4">
+                        <h2 className="text-xl font-bold">Amari's Scoops & Savours</h2>
+                        <p className="text-sm">221 R.Castillo Street, Davao City, Davao del Sur, 8000</p>
+                        <p className="font-semibold mt-2">Official Receipt</p>
+                      </div>
+                      <div className="mb-4 space-y-1">
+                        <p><strong>Date:</strong> {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</p>
+                        <p><strong>Payment:</strong> {paymentType} {paymentType === 'E-Payment' ? `(${ePaymentOption})` : ''}</p>
+                      </div>
+                      <div className="border-y py-3 mb-4 space-y-2">
+                        {cart.map((item: CartItem) => (
+                          <div key={item.id} className="flex justify-between items-center">
+                            <div className="flex items-center">
+                              <div>
+                                <p className="font-medium">{item.name}</p>
+                                <p className="text-xs text-gray-600">({item.quantity} x ₱{item.price.toFixed(2)})</p>
+                              </div>
+                            </div>
+                            <p className="font-semibold">₱{(item.price * item.quantity).toFixed(2)}</p>
                           </div>
-                          <span>₱{(item.price * item.quantity).toFixed(2)}</span>
+                        ))}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span>Subtotal:</span>
+                          <span>₱{getVatBreakdown(getTotalAmount()).subtotal.toFixed(2)}</span>
                         </div>
-                      ))}
+                        <div className="flex justify-between text-sm">
+                          <span>VAT (12%):</span>
+                          <span>₱{getVatBreakdown(getTotalAmount()).vatAmount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between font-bold text-lg mt-2 pt-2 border-t">
+                          <span>Total:</span>
+                          <span>₱{getTotalAmount().toFixed(2)}</span>
+                        </div>
+                      </div>
+                      <p className="text-center mt-6 text-xs">Thank you for your purchase!</p>
                     </div>
-                    <div className="border-t mt-2 pt-2 font-bold flex justify-between">
-                      <span>Total:</span>
-                      <span>₱{getTotalAmount().toFixed(2)}</span>
-                    </div>
+                    <Button variant="outline" onClick={handlePrintReceipt} className="w-auto self-center">
+                      <Printer className="h-4 w-auto mr-4" /> Print Receipt
+                    </Button>
                   </div>
 
-                  {/* Payment Method */}
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Payment Method</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button variant={paymentType === 'Cash' ? 'default' : 'outline'} onClick={() => setPaymentType('Cash')}>Cash</Button>
-                      <Button variant={paymentType === 'E-Payment' ? 'default' : 'outline'} onClick={() => setPaymentType('E-Payment')}>E-Payment</Button>
+                  {/* Right Side - Payment Method */}
+                  <div className="space-y-4 flex flex-col">
+                    <h4 className="font-medium text-lg">Payment Method</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button variant={paymentType === 'Cash' ? 'default' : 'outline'} onClick={() => setPaymentType('Cash')} size="lg">Cash</Button>
+                      <Button variant={paymentType === 'E-Payment' ? 'default' : 'outline'} onClick={() => setPaymentType('E-Payment')} size="lg">E-Payment</Button>
                     </div>
 
                     {paymentType === 'E-Payment' && (
-                      <div className="p-4 border rounded-lg space-y-4">
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button size="sm" variant={ePaymentOption === 'GCash' ? 'default' : 'outline'} onClick={() => setEPaymentOption('GCash')}>GCash</Button>
-                          <Button size="sm" variant={ePaymentOption === 'Maya' ? 'default' : 'outline'} onClick={() => setEPaymentOption('Maya')}>Maya</Button>
+                      <div className="p-6 border rounded-lg space-y-4 bg-muted/30">
+                        <div className="grid grid-cols-2 gap-3">
+                          <Button size="default" variant={ePaymentOption === 'GCash' ? 'default' : 'outline'} onClick={() => setEPaymentOption('GCash')}>GCash</Button>
+                          <Button size="default" variant={ePaymentOption === 'Maya' ? 'default' : 'outline'} onClick={() => setEPaymentOption('Maya')}>Maya</Button>
                         </div>
                         <div className="flex justify-center">
-                          <img
-                            src={ePaymentOption === 'GCash' ? qrCodeUrls.gcashQrUrl : qrCodeUrls.mayaQrUrl}
-                            alt={`${ePaymentOption} QR Code`}
-                            className="w-40 h-40 rounded-lg bg-white p-1"
-                          />
+                          <div className="relative">
+                            <img
+                              src={ePaymentOption === 'GCash' ? qrCodeUrls.gcashQrUrl : qrCodeUrls.mayaQrUrl}
+                              alt={`${ePaymentOption} QR Code`}
+                              className="w- h-70 rounded-lg bg-white p-2 shadow-md"
+                            />
+                          </div>
                         </div>
+                        <p className="text-center text-sm text-muted-foreground">
+                          Scan the QR code to complete payment
+                        </p>
                       </div>
                     )}
+
+                    <div className="flex-1"></div>
+
+                    {/* Confirm button at bottom of right side */}
+                    <div className="mt-auto pt-4 flex justify-center">
+                      <Button onClick={handleCheckout} disabled={isProcessing} className="w-auto px-8" size="lg">
+                        {isProcessing ? "Processing..." : (paymentType === 'Cash' ? 'Confirm Cash Payment' : 'Confirm Payment')}
+                      </Button>
+                    </div>
                   </div>
                 </div>
-                <DialogFooter className="mt-4">
-                  <Button onClick={handleCheckout} disabled={isProcessing} className="w-full">
-                    {isProcessing ? "Processing..." : (paymentType === 'Cash' ? 'Confirm Cash Payment' : 'Confirm Payment')}
-                  </Button>
-                </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
@@ -363,10 +389,7 @@ export function POSInterface() {
     <div className="flex flex-col lg:flex-row lg:h-screen bg-background">
       {/* Product Grid Section */}
       <div className="flex-1 p-4 md:p-6 lg:p-8 flex flex-col min-w-0">
-        <div className="mb-4 md:mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">Point of Sale</h1>
-          <p className="text-muted-foreground text-sm md:text-base">Select products to add to cart</p>
-        </div>
+
 
         <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
           <div className="relative flex-1 min-w-[200px]">
@@ -468,8 +491,9 @@ export function POSInterface() {
         )}
       </div>
 
-      {/* large tablet & desktop: visible cart */}
-      <div className="hidden lg:flex w-full lg:w-80 xl:w-96 bg-card border-l border-border flex-col">
+      {/* Large screens: persistent cart sidebar */}
+
+      <div className="hidden lg:flex w-full lg:w-80 xl:w-96 bg-card border-l border-border flex-col h-screen max-h-screen">
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-bold">Cart</h2>
           {cart.length > 0 && (
@@ -487,7 +511,7 @@ export function POSInterface() {
           <ReceiptContent />
           <DialogFooter className="p-4 bg-muted sm:justify-between">
             <Button variant="outline" onClick={() => setIsReceiptModalOpen(false)}>Close</Button>
-            <Button onClick={handlePrintReceipt}><Printer className="h-4 w-4 mr-2" /> Print Receipt</Button>
+            <Button onClick={handlePrintReceipt}><Printer className="h-6 w-6 mr-3" /> Print Receipt</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

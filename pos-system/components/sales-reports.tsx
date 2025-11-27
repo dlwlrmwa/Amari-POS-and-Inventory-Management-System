@@ -134,12 +134,8 @@ export function SalesReports() {
   return (
     <div className="p-4 md:p-6 space-y-6 bg-background">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Sales Reports</h1>
-          <p className="text-muted-foreground">Analyze your sales performance and trends</p>
-        </div>
-        <div className="flex items-center space-x-2">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
+        <div className="flex items-center space-x-2 md:ml-auto">
           <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
             <SelectTrigger className="w-32">
               <SelectValue />

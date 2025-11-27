@@ -57,6 +57,47 @@ export async function exportSalesToExcel(sales: Sale[], filename: string = 'sale
     saveAs(new Blob([buffer]), `${filename}-${date}.xlsx`)
 }
 
+/**
+ * Export ingredients to Excel
+ */
+export async function exportIngredientsToExcel(ingredients: any[], filename: string = 'ingredients-report') {
+    if (ingredients.length === 0) {
+        alert('No ingredients to export')
+        return
+    }
+
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('Ingredients')
+
+    worksheet.columns = [
+        { header: 'Ingredient Name', key: 'name', width: 25 },
+        { header: 'Unit', key: 'unit', width: 15 },
+        { header: 'Current Stock', key: 'current_stock', width: 15 },
+        { header: 'Min Stock', key: 'minimum_stock', width: 15 },
+        { header: 'Date Added', key: 'date_added', width: 20 },
+        { header: 'Date Updated', key: 'date_updated', width: 20 },
+        { header: 'Status', key: 'status', width: 15 }
+    ]
+
+    ingredients.forEach(ingredient => {
+        worksheet.addRow({
+            name: ingredient.name,
+            unit: ingredient.unit,
+            current_stock: ingredient.current_stock,
+            minimum_stock: ingredient.minimum_stock,
+            date_added: ingredient.added_date,
+            date_updated: ingredient.updated_date,
+            status: ingredient.current_stock <= ingredient.minimum_stock ? 'Low Stock' : 'In Stock'
+        })
+    })
+
+    worksheet.getRow(1).font = { bold: true }
+
+    const buffer = await workbook.xlsx.writeBuffer()
+    const date = new Date().toISOString().split('T')[0]
+    saveAs(new Blob([buffer]), `${filename}-${date}.xlsx`)
+}
+
 
 /**
  * Export products (inventory) to Excel

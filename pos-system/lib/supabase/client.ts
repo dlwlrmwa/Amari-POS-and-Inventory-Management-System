@@ -17,6 +17,16 @@ export interface Product {
     image_url?: string
 }
 
+export interface Ingredient {
+    id: number
+    name: string
+    unit: string
+    current_stock: number
+    minimum_stock: number
+    added_date?: string
+    updated_date?: string
+}
+
 export interface CartItem {
     id: number
     name: string

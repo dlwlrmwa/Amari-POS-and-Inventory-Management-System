@@ -83,12 +83,7 @@ export function LoginForm() {
           </form>
 
           <div className="mt-6 text-sm text-muted-foreground">
-            <p className="text-center mb-2">Demo Credentials:</p>
-            <div className="space-y-1 text-xs">
-              <p>Admin: admin / admin123</p>
-              <p>Manager: manager / manager123</p>
-              <p>Cashier: cashier / cashier123</p>
-            </div>
+            <p className="space-y-1 text-center mb-2">All rights reserved 2025. Arf2 IM.</p>
           </div>
         </CardContent>
       </Card>

@@ -64,10 +64,6 @@ export function Settings() {
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground">Manage your POS system configuration and preferences</p>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* User Management */}
@@ -83,16 +79,16 @@ export function Settings() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" placeholder="Juan" value={newUser.firstName} onChange={handleInputChange} />
+                <Input id="firstName" value={newUser.firstName} onChange={handleInputChange} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" placeholder="Dela Cruz" value={newUser.lastName} onChange={handleInputChange} />
+                <Input id="lastName" value={newUser.lastName} onChange={handleInputChange} />
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
-              <Input id="username" placeholder="juandelacruz" value={newUser.username} onChange={handleInputChange} />
+              <Input id="username" placeholder="e.g., eligwapa" value={newUser.username} onChange={handleInputChange} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
