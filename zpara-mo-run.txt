@@ -1,3 +1,12 @@
 1. npm install
 
 2. pnpm dev -p 3001
+
+
+
+
+COMMIT 
+
+git add .
+git commit -m "describe your changes"
+git push

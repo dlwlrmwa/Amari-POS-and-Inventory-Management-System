@@ -753,7 +753,7 @@ export function InventoryManagement() {
                     <TableRow>
                       <TableHead>Ingredient</TableHead>
                       <TableHead>Unit</TableHead>
-                      <TableHead>Stock Remaining</TableHead>
+                      <TableHead>Stock</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Date Added / Time</TableHead>
                       <TableHead>Last Updated</TableHead>

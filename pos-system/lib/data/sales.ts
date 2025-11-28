@@ -17,9 +17,9 @@ export async function getSales(limit?: number): Promise<Sale[]> {
         if (error) throw error
 
         return data?.map(sale => ({
-            id: sale.salesID,
+            id: sale.salesid,
             date: sale.date,
-            time: sale.time,
+            time: sale.sale_time,
             totalAmount: sale.total_amount,
             cashReceived: sale.cash_received,
             change: sale.change,
@@ -39,21 +39,21 @@ export async function getSaleById(id: string): Promise<Sale | null> {
         const { data, error } = await supabase
             .from('sales')
             .select('*')
-            .eq('salesID', id)
+            .eq('salesid', id)
             .single()
 
         if (error) throw error
 
         return {
-            id: data.salesID,
+            id: data.salesid,
             date: data.date,
-            time: data.time,
+            time: data.sale_time,
             totalAmount: data.total_amount,
             cashReceived: data.cash_received,
             change: data.change,
             paymentMethod: data.payment_method,
             paymentSubMethod: data.payment_sub_method,
-            staffId: data.staffID,
+            staffId: data.staffid,
             status: data.status,
         }
     } catch (err) {
@@ -104,8 +104,8 @@ export async function createSale(
     // Fetch the last transaction ID to generate a new one
     const { data: lastSale, error: lastSaleError } = await supabase
         .from('sales')
-        .select('salesID')
-        .order('salesID', { ascending: false })
+        .select('salesid')
+        .order('salesid', { ascending: false })
         .limit(1)
         .single()
 
@@ -115,7 +115,7 @@ export async function createSale(
 
     let newTransactionId: string
     if (lastSale) {
-        const lastIdNumber = parseInt(lastSale.salesID.split('-')[1], 10)
+        const lastIdNumber = parseInt(lastSale.salesid.split('-')[1], 10)
         const newIdNumber = lastIdNumber + 1
         newTransactionId = `TXN-${newIdNumber.toString().padStart(4, '0')}`
     } else {
@@ -126,15 +126,15 @@ export async function createSale(
         const { data: saleData, error: saleError } = await supabase
             .from('sales')
             .insert({
-                salesID: newTransactionId,
+                salesid: newTransactionId,
                 date,
-                time,
+                sale_time: time,
                 total_amount: totalAmount,
                 cash_received: paymentMethod === "Cash" ? cashReceived : null,
                 change: paymentMethod === "Cash" ? change : null,
                 payment_method: paymentMethod,
                 payment_sub_method: paymentSubMethod,
-                staffID: staffId || null,
+                staffid: staffId || null,
                 status: 'Completed',
             })
             .select()
@@ -169,15 +169,15 @@ export async function createSale(
         }
 
         return {
-            id: saleData.salesID,
+            id: saleData.salesid,
             date: saleData.date,
-            time: saleData.time,
+            time: saleData.sale_time,
             totalAmount: saleData.total_amount,
             cashReceived: saleData.cash_received,
             change: saleData.change,
             paymentMethod: saleData.payment_method,
             paymentSubMethod: saleData.payment_sub_method,
-            staffId: saleData.staffID,
+            staffId: saleData.staffid,
             status: saleData.status,
             items: saleItems,
         }
@@ -199,15 +199,15 @@ export async function getSalesByDateRange(startDate: string, endDate: string): P
         if (error) throw error
 
         return data?.map(sale => ({
-            id: sale.salesID,
+            id: sale.salesid,
             date: sale.date,
-            time: sale.time,
+            time: sale.sale_time,
             totalAmount: sale.total_amount,
             cashReceived: sale.cash_received,
             change: sale.change,
             paymentMethod: sale.payment_method,
             paymentSubMethod: sale.payment_sub_method,
-            staffId: sale.staffID,
+            staffId: sale.staffid,
             status: sale.status,
         })) || []
     } catch (err) {

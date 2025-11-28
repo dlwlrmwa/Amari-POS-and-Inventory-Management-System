@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://cwylpvnfmdbuztarjuuv.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3eWxwdm5mbWRidXp0YXJqdXV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxOTU4MzQsImV4cCI6MjA3NDc3MTgzNH0.cxCqfdbcgr5JBKxOb8Pm9LT6I9uuMZ16tWzNWZumpAs'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qwwbhkdvrkklewofsvzb.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Joa2R2cmtrbGV3b2ZzdnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTE0ODYsImV4cCI6MjA3OTg2NzQ4Nn0.w2jRoPCEDnwyFS2qFxrdJHEfVsC69LtPcr85AiZT2FY'
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
@@ -62,7 +62,6 @@ export interface SaleItem {
 export interface User {
     id: string
     username: string
-    name: string
     role: 'cashier' | 'manager' | 'admin'
 }
 
