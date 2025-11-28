@@ -21,7 +21,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { Search, Plus, Minus, ShoppingCart, CreditCard, Trash2, X, Printer } from "lucide-react"
+import { Search, Plus, Minus, ShoppingCart, CreditCard, Trash2, X, Printer, Banknote } from "lucide-react"
 import type { Product, CartItem, Sale } from "@/lib/supabase/client"
 import { getProducts } from "@/lib/data/products"
 import { createSale } from "@/lib/data/sales"
@@ -49,6 +49,10 @@ export function POSInterface() {
   const [ePaymentOption, setEPaymentOption] = useState<"GCash" | "Maya">("GCash")
   const [qrCodeUrls, setQrCodeUrls] = useState({ gcashQrUrl: "", mayaQrUrl: "" })
 
+  // Cash payment state
+  const [cashReceived, setCashReceived] = useState<string>("")
+  const [change, setChange] = useState<number>(0)
+
   const receiptRef = useRef(null)
 
   const loadProducts = async () => {
@@ -70,6 +74,13 @@ export function POSInterface() {
   useEffect(() => {
     loadProducts()
   }, [])
+
+  // Calculate change when cash received changes
+  useEffect(() => {
+    const cash = parseFloat(cashReceived) || 0
+    const total = getTotalAmount()
+    setChange(cash - total)
+  }, [cashReceived, cart])
 
   const filteredProducts = products.filter((product: Product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -141,18 +152,38 @@ export function POSInterface() {
   }
   const getTotalItems = () => cart.reduce((total: number, item: CartItem) => total + item.quantity, 0)
 
+  const handleAddCashAmount = (amount: number) => {
+    const currentCash = parseFloat(cashReceived) || 0
+    const newCash = currentCash + amount
+    setCashReceived(newCash.toString())
+  }
+
   const handleCheckout = async () => {
     if (cart.length === 0) return
+
+    // For cash payments, validate cash received
+    if (paymentType === "Cash") {
+      const cash = parseFloat(cashReceived) || 0
+      const total = getTotalAmount()
+      if (cash < total) {
+        alert("Insufficient cash received!")
+        return
+      }
+    }
+
     try {
       setIsProcessing(true)
       const saleData = await createSale(
         cart,
         paymentType,
+        paymentType === "Cash" ? parseFloat(cashReceived) : undefined,
         paymentType === "E-Payment" ? ePaymentOption : undefined
       )
       setReceipt(saleData)
       setIsReceiptModalOpen(true)
       clearCart()
+      setCashReceived("")
+      setChange(0)
       setIsCheckoutOpen(false)
       setIsCartSheetOpen(false)
       await loadProducts()
@@ -287,6 +318,18 @@ export function POSInterface() {
                           <span>Total:</span>
                           <span>₱{getTotalAmount().toFixed(2)}</span>
                         </div>
+                        {paymentType === "Cash" && cashReceived && (
+                          <>
+                            <div className="flex justify-between text-sm mt-2">
+                              <span>Cash Received:</span>
+                              <span>₱{parseFloat(cashReceived).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-sm font-semibold">
+                              <span>Change:</span>
+                              <span>₱{change.toFixed(2)}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
                       <p className="text-center mt-6 text-xs">Thank you for your purchase!</p>
                     </div>
@@ -302,6 +345,56 @@ export function POSInterface() {
                       <Button variant={paymentType === 'Cash' ? 'default' : 'outline'} onClick={() => setPaymentType('Cash')} size="lg">Cash</Button>
                       <Button variant={paymentType === 'E-Payment' ? 'default' : 'outline'} onClick={() => setPaymentType('E-Payment')} size="lg">E-Payment</Button>
                     </div>
+
+                    {paymentType === 'Cash' && (
+                      <div className="p-6 border rounded-lg space-y-4 bg-muted/30">
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Cash Received</label>
+                            <Input
+                              type="number"
+                              placeholder="Enter amount"
+                              value={cashReceived}
+                              onChange={(e) => setCashReceived(e.target.value)}
+                              className="text-lg"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2">
+                            {[50, 100, 150, 200, 500, 1000].map((amount) => (
+                              <Button
+                                key={amount}
+                                variant="outline"
+                                onClick={() => handleAddCashAmount(amount)}
+                                className="h-12"
+                              >
+                                <Banknote className="h-4 w-4 mr-1" />
+                                ₱{amount}
+                              </Button>
+                            ))}
+                          </div>
+
+                          {cashReceived && (
+                            <div className="p-4 bg-background rounded-lg space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm">Total Amount:</span>
+                                <span className="font-semibold">₱{getTotalAmount().toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm">Cash Received:</span>
+                                <span className="font-semibold">₱{parseFloat(cashReceived).toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between items-center text-lg border-t pt-2">
+                                <span className="font-bold">Change:</span>
+                                <span className={`font-bold ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  ₱{change.toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {paymentType === 'E-Payment' && (
                       <div className="p-6 border rounded-lg space-y-4 bg-muted/30">
@@ -328,7 +421,12 @@ export function POSInterface() {
 
                     {/* Confirm button at bottom of right side */}
                     <div className="mt-auto pt-4 flex justify-center">
-                      <Button onClick={handleCheckout} disabled={isProcessing} className="w-auto px-8" size="lg">
+                      <Button
+                        onClick={handleCheckout}
+                        disabled={isProcessing || (paymentType === "Cash" && (!cashReceived || change < 0))}
+                        className="w-auto px-8"
+                        size="lg"
+                      >
                         {isProcessing ? "Processing..." : (paymentType === 'Cash' ? 'Confirm Cash Payment' : 'Confirm Payment')}
                       </Button>
                     </div>
@@ -380,6 +478,18 @@ export function POSInterface() {
           <span>Total:</span>
           <span>₱{receipt?.totalAmount.toFixed(2)}</span>
         </div>
+        {receipt?.paymentMethod === "Cash" && receipt?.cashReceived && (
+          <>
+            <div className="flex justify-between mt-2">
+              <span>Cash Received:</span>
+              <span>₱{receipt.cashReceived.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between font-semibold">
+              <span>Change:</span>
+              <span>₱{(receipt.change || 0).toFixed(2)}</span>
+            </div>
+          </>
+        )}
       </div>
       <p className="text-center mt-6 text-xs">Thank you for your purchase!</p>
     </div>

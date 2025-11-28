@@ -39,10 +39,12 @@ export interface Sale {
     id: string
     date: string
     time: string
-    customer?: string
     totalAmount: number
+    cashReceived?: number
+    change?: number
     paymentMethod: "Cash" | "E-Payment"
     paymentSubMethod?: "GCash" | "Maya"
+    staffId?: number
     status: string
     items?: SaleItem[]
 }

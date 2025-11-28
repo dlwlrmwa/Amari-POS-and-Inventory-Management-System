@@ -21,8 +21,9 @@ export async function exportSalesToExcel(sales: Sale[], filename: string = 'sale
         { header: 'Transaction ID', key: 'id', width: 20 },
         { header: 'Date', key: 'date', width: 15 },
         { header: 'Time', key: 'time', width: 15 },
-        { header: 'Customer', key: 'customer', width: 25 },
         { header: 'Amount', key: 'amount', width: 15 },
+        { header: 'Cash Received', key: 'cashReceived', width: 15 },
+        { header: 'Change', key: 'change', width: 15 },
         { header: 'Payment Method', key: 'paymentMethod', width: 20 },
         { header: 'Status', key: 'status', width: 15 }
     ]
@@ -33,9 +34,10 @@ export async function exportSalesToExcel(sales: Sale[], filename: string = 'sale
             id: sale.id,
             date: sale.date,
             time: sale.time,
-            customer: sale.customer || 'Walk-in Customer',
             amount: `₱${sale.totalAmount.toFixed(2)}`,
-            paymentMethod: sale.paymentMethod,
+            cashReceived: sale.cashReceived ? `₱${sale.cashReceived.toFixed(2)}` : 'N/A',
+            change: sale.change ? `₱${sale.change.toFixed(2)}` : 'N/A',
+            paymentMethod: sale.paymentMethod + (sale.paymentSubMethod ? ` (${sale.paymentSubMethod})` : ''),
             status: sale.status
         })
     })
@@ -44,7 +46,7 @@ export async function exportSalesToExcel(sales: Sale[], filename: string = 'sale
     const totalAmount = sales.reduce((sum, sale) => sum + sale.totalAmount, 0)
     worksheet.addRow({
         id: 'TOTAL',
-        customer: `${sales.length} transactions`,
+        time: `${sales.length} transactions`,
         amount: `₱${totalAmount.toFixed(2)}`
     })
 

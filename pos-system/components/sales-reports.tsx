@@ -24,7 +24,6 @@ import {
   ShoppingCart,
   TrendingUp,
   FileText,
-  FileSpreadsheet,
 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import type { Sale } from "@/lib/supabase/client"
@@ -325,7 +324,6 @@ export function SalesReports() {
                       </div>
                       <div>
                         <p className="font-bold text-lg">₱{transaction.totalAmount.toFixed(2)}</p>
-                        <p className="text-sm text-muted-foreground">{transaction.customer || "Walk-in"}</p>
                       </div>
                       <div className="text-xs text-muted-foreground">
                         <p>{transaction.date} - {transaction.time}</p>
@@ -343,7 +341,6 @@ export function SalesReports() {
                     <TableRow>
                       <TableHead>Transaction ID</TableHead>
                       <TableHead>Date & Time</TableHead>
-                      <TableHead>Customer</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Payment</TableHead>
                       <TableHead>Status</TableHead>
@@ -359,7 +356,6 @@ export function SalesReports() {
                             <p className="text-sm text-muted-foreground">{transaction.time}</p>
                           </div>
                         </TableCell>
-                        <TableCell>{transaction.customer || "Walk-in"}</TableCell>
                         <TableCell className="font-bold">₱{transaction.totalAmount.toFixed(2)}</TableCell>
                         <TableCell>
                           <Badge

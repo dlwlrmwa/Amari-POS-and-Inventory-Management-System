@@ -17,12 +17,15 @@ export async function getSales(limit?: number): Promise<Sale[]> {
         if (error) throw error
 
         return data?.map(sale => ({
-            id: sale.id,
+            id: sale.salesID,
             date: sale.date,
             time: sale.time,
-            customer: sale.customer,
             totalAmount: sale.total_amount,
+            cashReceived: sale.cash_received,
+            change: sale.change,
             paymentMethod: sale.payment_method,
+            paymentSubMethod: sale.payment_sub_method,
+            staffId: sale.staffID,
             status: sale.status,
         })) || []
     } catch (err) {
@@ -36,18 +39,21 @@ export async function getSaleById(id: string): Promise<Sale | null> {
         const { data, error } = await supabase
             .from('sales')
             .select('*')
-            .eq('id', id)
+            .eq('salesID', id)
             .single()
 
         if (error) throw error
 
         return {
-            id: data.id,
+            id: data.salesID,
             date: data.date,
             time: data.time,
-            customer: data.customer,
             totalAmount: data.total_amount,
+            cashReceived: data.cash_received,
+            change: data.change,
             paymentMethod: data.payment_method,
+            paymentSubMethod: data.payment_sub_method,
+            staffId: data.staffID,
             status: data.status,
         }
     } catch (err) {
@@ -83,19 +89,23 @@ export async function getSaleItems(saleId: string): Promise<SaleItem[]> {
 export async function createSale(
     cart: CartItem[],
     paymentMethod: "Cash" | "E-Payment",
+    cashReceived?: number,
     paymentSubMethod?: "GCash" | "Maya",
-    customer?: string
+    staffId?: number
 ): Promise<Sale> {
     const now = new Date()
     const date = now.toISOString().split('T')[0]
     const time = now.toTimeString().split(' ')[0].substring(0, 5)
     const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
 
+    // Calculate change for cash payments
+    const change = paymentMethod === "Cash" && cashReceived ? cashReceived - totalAmount : 0
+
     // Fetch the last transaction ID to generate a new one
     const { data: lastSale, error: lastSaleError } = await supabase
         .from('sales')
-        .select('id')
-        .order('id', { ascending: false })
+        .select('salesID')
+        .order('salesID', { ascending: false })
         .limit(1)
         .single()
 
@@ -105,7 +115,7 @@ export async function createSale(
 
     let newTransactionId: string
     if (lastSale) {
-        const lastIdNumber = parseInt(lastSale.id.split('-')[1], 10)
+        const lastIdNumber = parseInt(lastSale.salesID.split('-')[1], 10)
         const newIdNumber = lastIdNumber + 1
         newTransactionId = `TXN-${newIdNumber.toString().padStart(4, '0')}`
     } else {
@@ -116,13 +126,15 @@ export async function createSale(
         const { data: saleData, error: saleError } = await supabase
             .from('sales')
             .insert({
-                id: newTransactionId,
+                salesID: newTransactionId,
                 date,
                 time,
-                customer: customer || 'Walk-in Customer',
                 total_amount: totalAmount,
+                cash_received: paymentMethod === "Cash" ? cashReceived : null,
+                change: paymentMethod === "Cash" ? change : null,
                 payment_method: paymentMethod,
                 payment_sub_method: paymentSubMethod,
+                staffID: staffId || null,
                 status: 'Completed',
             })
             .select()
@@ -157,13 +169,15 @@ export async function createSale(
         }
 
         return {
-            id: saleData.id,
+            id: saleData.salesID,
             date: saleData.date,
             time: saleData.time,
-            customer: saleData.customer,
             totalAmount: saleData.total_amount,
+            cashReceived: saleData.cash_received,
+            change: saleData.change,
             paymentMethod: saleData.payment_method,
             paymentSubMethod: saleData.payment_sub_method,
+            staffId: saleData.staffID,
             status: saleData.status,
             items: saleItems,
         }
@@ -185,12 +199,15 @@ export async function getSalesByDateRange(startDate: string, endDate: string): P
         if (error) throw error
 
         return data?.map(sale => ({
-            id: sale.id,
+            id: sale.salesID,
             date: sale.date,
             time: sale.time,
-            customer: sale.customer,
             totalAmount: sale.total_amount,
+            cashReceived: sale.cash_received,
+            change: sale.change,
             paymentMethod: sale.payment_method,
+            paymentSubMethod: sale.payment_sub_method,
+            staffId: sale.staffID,
             status: sale.status,
         })) || []
     } catch (err) {
