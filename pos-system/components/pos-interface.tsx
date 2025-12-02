@@ -629,7 +629,7 @@ export function POSInterface() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-">
+        <div className="flex-1 overflow-y-auto">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 pr-2">
             {filteredProducts.map((product: Product) => (
               <Card
@@ -718,6 +718,7 @@ export function POSInterface() {
         </div>
         <CartContent />
       </div>
+
 
       {/* Receipt Modal */}
       <Dialog open={isReceiptModalOpen} onOpenChange={setIsReceiptModalOpen}>

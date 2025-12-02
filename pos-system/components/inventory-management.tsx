@@ -455,7 +455,7 @@ export function InventoryManagement() {
               <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Add New Ingredient</DialogTitle>
-                  <DialogDescription>Enter the details for the new ingredient.</DialogDescription>
+                  <DialogDescription>Enter the details for the new ingredient or raw materials.</DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 p-1">
