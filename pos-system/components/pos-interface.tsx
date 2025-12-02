@@ -222,7 +222,7 @@ export function POSInterface() {
       <html>
       <head>
         <style>
-          body { font-family: monospace; font-size: 12px; margin: 0; padding: 20px; }
+          body { font-family: monospace; font-size: 12px; margin: 0; padding: 20px; border: 1px solid #000; }
           .receipt { max-width: 400px; margin: 0 auto; }
           .text-center { text-align: center; }
           .mb-4 { margin-bottom: 16px; }

@@ -20,15 +20,15 @@ export async function getStoreSettings(): Promise<StoreSettings> {
         }, {} as Partial<StoreSettings>)
 
         return {
-            gcashQrUrl: settings.gcashQrUrl || '/mock-qr.png',
-            mayaQrUrl: settings.mayaQrUrl || '/mock-qr.png',
+            gcashQrUrl: settings.gcashQrUrl || '/gcash-qr.png',
+            mayaQrUrl: settings.mayaQrUrl || '/maya-qr.png',
         }
     } catch (err) {
         console.error('Error fetching store settings:', err)
         // Return default values in case of an error
         return {
-            gcashQrUrl: '/mock-qr.png',
-            mayaQrUrl: '/mock-qr.png',
+            gcashQrUrl: '/gcash-qr.png',
+            mayaQrUrl: '/maya-qr.png',
         }
     }
 }
