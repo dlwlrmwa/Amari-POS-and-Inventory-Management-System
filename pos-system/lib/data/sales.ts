@@ -4,9 +4,9 @@ import { updateStock } from './products'
 export async function getSales(limit?: number): Promise<Sale[]> {
     try {
         let query = supabase
-            .from('sales')
+            .from('v_sales_with_staff')
             .select('*')
-            .order('created_at', { ascending: false })
+            .order('date', { ascending: false })
 
         if (limit) {
             query = query.limit(limit)
@@ -25,7 +25,8 @@ export async function getSales(limit?: number): Promise<Sale[]> {
             change: sale.change,
             paymentMethod: sale.payment_method,
             paymentSubMethod: sale.payment_sub_method,
-            staffId: sale.staffID,
+            staffId: sale.staff_id,
+            staffName: sale.staff_name,
             status: sale.status,
         })) || []
     } catch (err) {
@@ -93,9 +94,11 @@ export async function createSale(
     paymentSubMethod?: "GCash" | "Maya",
     staffId?: number
 ): Promise<Sale> {
+    // Get current time in Asia/Manila timezone
     const now = new Date()
-    const date = now.toISOString().split('T')[0]
-    const time = now.toTimeString().split(' ')[0].substring(0, 5)
+    const manilaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
+    const date = manilaTime.toISOString().split('T')[0]
+    const time = manilaTime.toTimeString().split(' ')[0].substring(0, 5)
     const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
 
     // Calculate change for cash payments
@@ -190,11 +193,11 @@ export async function createSale(
 export async function getSalesByDateRange(startDate: string, endDate: string): Promise<Sale[]> {
     try {
         const { data, error } = await supabase
-            .from('sales')
+            .from('v_sales_with_staff')
             .select('*')
             .gte('date', startDate)
             .lte('date', endDate)
-            .order('created_at', { ascending: false })
+            .order('date', { ascending: false })
 
         if (error) throw error
 
@@ -207,7 +210,8 @@ export async function getSalesByDateRange(startDate: string, endDate: string): P
             change: sale.change,
             paymentMethod: sale.payment_method,
             paymentSubMethod: sale.payment_sub_method,
-            staffId: sale.staffid,
+            staffId: sale.staff_id,
+            staffName: sale.staff_name,
             status: sale.status,
         })) || []
     } catch (err) {
@@ -217,7 +221,9 @@ export async function getSalesByDateRange(startDate: string, endDate: string): P
 }
 
 export async function getTodaysSales(): Promise<Sale[]> {
-    const today = new Date().toISOString().split('T')[0]
+    const now = new Date()
+    const manilaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
+    const today = manilaTime.toISOString().split('T')[0]
     return getSalesByDateRange(today, today)
 }
 
@@ -227,9 +233,21 @@ export async function getSalesStats() {
     const totalTransactions = sales.length
     const averageOrderValue = totalTransactions > 0 ? totalSales / totalTransactions : 0
 
+    // Fetch top products
+    const { data: topProducts, error: topProductsError } = await supabase
+        .from('product_sales_performance')
+        .select('*')
+        .order('total_revenue', { ascending: false })
+        .limit(5)
+
+    if (topProductsError) {
+        console.error('Error fetching top products:', topProductsError)
+    }
+
     return {
         totalSales,
         totalTransactions,
         averageOrderValue,
+        topProducts: topProducts || [],
     }
 }

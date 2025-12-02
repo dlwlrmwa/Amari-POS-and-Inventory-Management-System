@@ -39,11 +39,11 @@ export function SalesReports() {
     totalSales: 0,
     totalTransactions: 0,
     averageOrderValue: 0,
+    topProducts: [] as any[],
   })
   const [selectedPeriod, setSelectedPeriod] = useState("daily")
   const [selectedChart, setSelectedChart] = useState("sales")
   const [chartData, setChartData] = useState<any[]>([])
-  const [topProducts, setTopProducts] = useState<any[]>([])
   const [growthRate, setGrowthRate] = useState(0)
 
   useEffect(() => {
@@ -77,16 +77,6 @@ export function SalesReports() {
 
       if (dailyError) throw dailyError
       setChartData(dailyData || [])
-
-      // Top products
-      const { data: productData, error: productError } = await supabase
-        .from("product_sales_performance")
-        .select("*")
-        .order("total_revenue", { ascending: false })
-        .limit(5)
-
-      if (productError) throw productError
-      setTopProducts(productData || [])
 
       // Growth rate (compare last 2 periods)
       if (dailyData && dailyData.length >= 2) {
@@ -260,10 +250,10 @@ export function SalesReports() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {topProducts.length === 0 ? (
+              {stats.topProducts.length === 0 ? (
                 <p className="text-muted-foreground text-center">No product sales yet</p>
               ) : (
-                topProducts.map((product, index) => (
+                stats.topProducts.map((product, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-3 bg-muted rounded-lg"
@@ -273,9 +263,9 @@ export function SalesReports() {
                         {index + 1}
                       </div>
                       <div>
-                        <p className="font-medium">{product.name}</p>
+                        <p className="font-medium">{product.product_name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {product.total_sold} units sold
+                          {product.total_quantity_sold} units sold
                         </p>
                       </div>
                     </div>
@@ -341,6 +331,7 @@ export function SalesReports() {
                     <TableRow>
                       <TableHead>Transaction ID</TableHead>
                       <TableHead>Date & Time</TableHead>
+                      <TableHead>Staff</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Payment</TableHead>
                       <TableHead>Status</TableHead>
@@ -355,6 +346,9 @@ export function SalesReports() {
                             <p className="font-medium">{transaction.date}</p>
                             <p className="text-sm text-muted-foreground">{transaction.time}</p>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <p className="font-medium">{transaction.staffName || 'Unknown'}</p>
                         </TableCell>
                         <TableCell className="font-bold">₱{transaction.totalAmount.toFixed(2)}</TableCell>
                         <TableCell>

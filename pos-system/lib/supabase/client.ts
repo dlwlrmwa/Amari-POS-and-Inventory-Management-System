@@ -45,6 +45,7 @@ export interface Sale {
     paymentMethod: "Cash" | "E-Payment"
     paymentSubMethod?: "GCash" | "Maya"
     staffId?: number
+    staffName?: string
     status: string
     items?: SaleItem[]
 }

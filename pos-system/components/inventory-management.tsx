@@ -248,9 +248,11 @@ export function InventoryManagement() {
   const handleDeleteProduct = async (id: number) => {
     if (confirm("Are you sure you want to delete this product?")) {
       try {
+        // Delete the product only, keep sales history intact
         await deleteProduct(id)
         await loadProducts()
-      } catch (error) {
+        alert("Product deleted successfully!")
+      } catch (error: any) {
         console.error('Error deleting product:', error)
         alert('Failed to delete product')
       }
@@ -262,7 +264,8 @@ export function InventoryManagement() {
       try {
         await deleteIngredient(id)
         await loadIngredients()
-      } catch (error) {
+        alert("Ingredient deleted successfully!")
+      } catch (error: any) {
         console.error('Error deleting ingredient:', error)
         alert('Failed to delete ingredient')
       }

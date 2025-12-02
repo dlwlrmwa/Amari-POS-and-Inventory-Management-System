@@ -9,9 +9,12 @@ import { DollarSign, ShoppingCart, Package, AlertTriangle, TrendingUp, Clock, Ey
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { getLowStockProducts } from "@/lib/data/products"
 import { getTodaysSales, getSalesStats } from "@/lib/data/sales"
+import { useAuth } from "@/lib/auth"
+import { formatTimeManilaTime } from "@/lib/utils"
 import type { Product, Sale } from "@/lib/supabase/client"
 
 export function Dashboard() {
+  const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [todaySales, setTodaySales] = useState<Sale[]>([])
   const [lowStockItems, setLowStockItems] = useState<Product[]>([])
@@ -60,11 +63,14 @@ export function Dashboard() {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      {/* Header with Welcome Message */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.name || 'User'}! 👋</h1>
+        </div>
         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
           <Clock className="h-4 w-4" />
-          <span>Last updated: {new Date().toLocaleTimeString()}</span>
+          <span>Last updated: {formatTimeManilaTime()}</span>
         </div>
       </div>
 

@@ -26,11 +26,13 @@ import type { Product, CartItem, Sale } from "@/lib/supabase/client"
 import { getProducts } from "@/lib/data/products"
 import { createSale } from "@/lib/data/sales"
 import { getStoreSettings } from "@/lib/data/settings"
-import { useReactToPrint } from "react-to-print"
+import { useAuth } from "@/lib/auth"
+import { formatDateManilaTime } from "@/lib/utils"
 
 const categories = ["All", "Beverages", "Food", "Ice Cream"]
 
 export function POSInterface() {
+  const { user } = useAuth()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -53,7 +55,10 @@ export function POSInterface() {
   const [cashReceived, setCashReceived] = useState<string>("")
   const [change, setChange] = useState<number>(0)
 
-  const receiptRef = useRef(null)
+  // Left-handed mode preference
+  const [isLeftHanded, setIsLeftHanded] = useState(false)
+
+  const receiptRef = useRef<HTMLDivElement>(null)
 
   const loadProducts = async () => {
     try {
@@ -73,6 +78,9 @@ export function POSInterface() {
 
   useEffect(() => {
     loadProducts()
+    // Load left-handed preference from localStorage
+    const savedLeftHanded = localStorage.getItem("isLeftHanded") === "true"
+    setIsLeftHanded(savedLeftHanded)
   }, [])
 
   // Calculate change when cash received changes
@@ -177,7 +185,8 @@ export function POSInterface() {
         cart,
         paymentType,
         paymentType === "Cash" ? parseFloat(cashReceived) : undefined,
-        paymentType === "E-Payment" ? ePaymentOption : undefined
+        paymentType === "E-Payment" ? ePaymentOption : undefined,
+        user ? parseInt(user.id) : undefined
       )
       setReceipt(saleData)
       setIsReceiptModalOpen(true)
@@ -195,9 +204,109 @@ export function POSInterface() {
     }
   }
 
-  const handlePrintReceipt = useReactToPrint({
-    content: () => receiptRef.current,
-  } as any)
+  const handlePrintReceipt = () => {
+    if (!receipt) {
+      alert('Receipt data not found')
+      return
+    }
+
+    const printWindow = window.open('', '', 'width=800,height=600')
+    if (!printWindow) {
+      alert('Cannot open print window. Please allow popups.')
+      return
+    }
+
+    // Create receipt HTML content
+    const receiptHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: monospace; font-size: 12px; margin: 0; padding: 20px; }
+          .receipt { max-width: 400px; margin: 0 auto; }
+          .text-center { text-align: center; }
+          .mb-4 { margin-bottom: 16px; }
+          .mb-2 { margin-bottom: 8px; }
+          .mt-2 { margin-top: 8px; }
+          .mt-6 { margin-top: 24px; }
+          .border-y { border-top: 1px solid #000; border-bottom: 1px solid #000; }
+          .border-t { border-top: 1px solid #000; }
+          .py-3 { padding: 12px 0; }
+          .py-2 { padding: 8px 0; }
+          .pt-2 { padding-top: 8px; }
+          .space-y-1 > * { margin-bottom: 4px; }
+          .space-y-2 > * { margin-bottom: 8px; }
+          .font-bold { font-weight: bold; }
+          .font-semibold { font-weight: 600; }
+          .text-lg { font-size: 14px; }
+          .text-xl { font-size: 16px; }
+          .text-xs { font-size: 10px; }
+          .flex { display: flex; }
+          .justify-between { justify-content: space-between; }
+          .items-center { align-items: center; }
+          p { margin: 0; }
+        </style>
+      </head>
+      <body>
+        <div class="receipt">
+          <div class="text-center mb-4">
+            <div class="text-xl font-bold">Amari's Scoops & Savours</div>
+            <p>221 R.Castillo Street, Davao City, Davao del Sur, 8000</p>
+            <p class="font-semibold mt-2">Official Receipt</p>
+          </div>
+          <div class="mb-4 space-y-1">
+            <p><strong>Transaction ID:</strong> ${receipt?.id}</p>
+            <p><strong>Date:</strong> ${receipt?.date} ${receipt?.time}</p>
+            <p><strong>Payment:</strong> ${receipt?.paymentMethod} ${receipt?.paymentSubMethod ? `(${receipt.paymentSubMethod})` : ''}</p>
+          </div>
+          <div class="border-y py-2 mb-4 space-y-2">
+            ${receipt?.items?.map((item: any) => `
+              <div class="flex justify-between items-center">
+                <div>
+                  <p>${item.productName}</p>
+                  <p class="text-xs">(${item.quantity} x ₱${item.unitPrice.toFixed(2)})</p>
+                </div>
+                <p>₱${item.subtotal.toFixed(2)}</p>
+              </div>
+            `).join('')}
+          </div>
+          <div class="space-y-1">
+            <div class="flex justify-between">
+              <span>Subtotal:</span>
+              <span>₱${getVatBreakdown(receipt?.totalAmount || 0).subtotal.toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>VAT (12%):</span>
+              <span>₱${getVatBreakdown(receipt?.totalAmount || 0).vatAmount.toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between font-bold text-lg mt-2 pt-2 border-t">
+              <span>Total:</span>
+              <span>₱${receipt?.totalAmount.toFixed(2)}</span>
+            </div>
+            ${receipt?.paymentMethod === "Cash" && receipt?.cashReceived ? `
+              <div class="flex justify-between mt-2">
+                <span>Cash Received:</span>
+                <span>₱${receipt.cashReceived.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between font-semibold">
+                <span>Change:</span>
+                <span>₱${(receipt.change || 0).toFixed(2)}</span>
+              </div>
+            ` : ''}
+          </div>
+          <p class="text-center mt-6 text-xs">Thank you for your purchase!</p>
+        </div>
+      </body>
+      </html>
+    `
+
+    printWindow.document.write(receiptHTML)
+    printWindow.document.close()
+
+    setTimeout(() => {
+      printWindow.print()
+    }, 250)
+  }
 
   if (loading) {
     return (
@@ -289,7 +398,7 @@ export function POSInterface() {
                         <p className="font-semibold mt-2">Official Receipt</p>
                       </div>
                       <div className="mb-4 space-y-1">
-                        <p><strong>Date:</strong> {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</p>
+                        <p><strong>Date:</strong> {formatDateManilaTime()}</p>
                         <p><strong>Payment:</strong> {paymentType} {paymentType === 'E-Payment' ? `(${ePaymentOption})` : ''}</p>
                       </div>
                       <div className="border-y py-3 mb-4 space-y-2">
@@ -333,9 +442,6 @@ export function POSInterface() {
                       </div>
                       <p className="text-center mt-6 text-xs">Thank you for your purchase!</p>
                     </div>
-                    <Button variant="outline" onClick={handlePrintReceipt} className="w-auto self-center">
-                      <Printer className="h-4 w-auto mr-4" /> Print Receipt
-                    </Button>
                   </div>
 
                   {/* Right Side - Payment Method */}
@@ -496,11 +602,9 @@ export function POSInterface() {
   )
 
   return (
-    <div className="flex flex-col lg:flex-row lg:h-screen bg-background">
+    <div className={`flex flex-col lg:flex-row lg:h-screen bg-background ${isLeftHanded ? 'lg:flex-row-reverse' : ''}`}>
       {/* Product Grid Section */}
-      <div className="flex-1 p-4 md:p-6 lg:p-8 flex flex-col min-w-0">
-
-
+      <div className="flex-1 p-4 md:p-6 lg:p-8 flex flex-col min-w-0 h-full overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -525,8 +629,8 @@ export function POSInterface() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto pb-24 lg:pb-0">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+        <div className="flex-1 overflow-">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 pr-2">
             {filteredProducts.map((product: Product) => (
               <Card
                 key={product.id}
@@ -603,7 +707,7 @@ export function POSInterface() {
 
       {/* Large screens: persistent cart sidebar */}
 
-      <div className="hidden lg:flex w-full lg:w-80 xl:w-96 bg-card border-l border-border flex-col h-screen max-h-screen">
+      <div className={`hidden lg:flex w-full lg:w-80 xl:w-96 bg-card flex-col h-screen max-h-screen ${isLeftHanded ? 'border-r border-border' : 'border-l border-border'}`}>
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-bold">Cart</h2>
           {cart.length > 0 && (

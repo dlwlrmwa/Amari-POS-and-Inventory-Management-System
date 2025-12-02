@@ -31,19 +31,19 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
       id: "inventory",
       label: "Inventory",
       icon: Package,
-      roles: ["manager", "admin"],
+      roles: ["admin", "manager", "cashier"],
     },
     {
       id: "reports",
       label: "Sales Reports",
       icon: BarChart3,
-      roles: ["manager", "admin"],
+      roles: ["admin", "manager", "cashier"],
     },
     {
       id: "settings",
       label: "Settings",
       icon: Settings,
-      roles: ["admin"],
+      roles: ["admin", "manager", "cashier"],
     },
   ]
 

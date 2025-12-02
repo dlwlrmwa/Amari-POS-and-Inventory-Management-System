@@ -44,9 +44,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error || !data) return false
 
     if (data.password === password) {
-      const userObj: User = { id: data.id, username: data.username, role: data.role, name: data.name }
+      const userObj: User = { id: data.id.toString(), username: data.username, role: data.role, name: data.name }
       setUser(userObj)
       localStorage.setItem("pos-user", JSON.stringify(userObj))
+
+      // Log login to audit logs
+      await supabase.from("audit_logs").insert([{
+        user_id: data.id,
+        username: data.username,
+        action: "LOGIN",
+        entity_type: "Authentication",
+        entity_id: data.id,
+        description: `User logged in: ${data.username}`
+      }])
+
       return true
     }
     return false
@@ -64,6 +75,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = () => {
+    if (user) {
+      // Log logout to audit logs (fire and forget)
+      void supabase.from("audit_logs").insert([{
+        user_id: parseInt(user.id),
+        username: user.username,
+        action: "LOGOUT",
+        entity_type: "Authentication",
+        entity_id: parseInt(user.id),
+        description: `User logged out: ${user.username}`
+      }])
+    }
     setUser(null)
     localStorage.removeItem("pos-user")
   }
