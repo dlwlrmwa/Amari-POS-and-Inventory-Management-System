@@ -511,9 +511,13 @@ export function POSInterface() {
                         <div className="flex justify-center">
                           <div className="relative">
                             <img
-                              src={ePaymentOption === 'GCash' ? qrCodeUrls.gcashQrUrl : qrCodeUrls.mayaQrUrl}
+                              src={ePaymentOption === 'GCash' ? qrCodeUrls.gcashQrUrl || '/gcash-qr.png' : qrCodeUrls.mayaQrUrl || '/maya-qr.png'}
                               alt={`${ePaymentOption} QR Code`}
-                              className="w- h-70 rounded-lg bg-white p-2 shadow-md"
+                              className="w-64 h-64 rounded-lg bg-white p-2 shadow-md object-contain"
+                              onError={(e) => {
+                                const img = e.target as HTMLImageElement;
+                                img.src = ePaymentOption === 'GCash' ? '/gcash-qr.png' : '/maya-qr.png';
+                              }}
                             />
                           </div>
                         </div>

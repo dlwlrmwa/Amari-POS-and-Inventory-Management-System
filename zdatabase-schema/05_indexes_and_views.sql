@@ -150,9 +150,8 @@ SELECT
     MIN(total_amount)::DECIMAL as min_transaction,
     SUM(CASE WHEN payment_method = 'Cash' THEN total_amount ELSE 0 END)::DECIMAL as cash_total,
     SUM(CASE WHEN payment_method = 'E-Payment' THEN total_amount ELSE 0 END)::DECIMAL as epayment_total,
-    COUNT(CASE WHEN status = 'Voided' THEN 1 END) as voided_transactions
 FROM sales
-WHERE status IN ('Completed', 'Voided')
+WHERE status IN ('Completed')
 GROUP BY DATE(created_at)
 ORDER BY sale_date DESC;
 

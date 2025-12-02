@@ -778,7 +778,6 @@ export function Settings() {
                   <SelectItem value="all">All Actions</SelectItem>
                   <SelectItem value="LOGIN">Logins</SelectItem>
                   <SelectItem value="SALE">Sales</SelectItem>
-                  <SelectItem value="VOID">Voids</SelectItem>
                   <SelectItem value="PAYMENT_PROCESSING">Payments</SelectItem>
                   <SelectItem value="USER_CREATE">User Created</SelectItem>
                   <SelectItem value="USER_UPDATE">User Updated</SelectItem>

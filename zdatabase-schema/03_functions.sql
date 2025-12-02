@@ -248,31 +248,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- =====================================================
--- FUNCTION: Void a sale
--- =====================================================
-CREATE OR REPLACE FUNCTION void_sale(p_sale_id VARCHAR, p_void_reason TEXT, p_voided_by_id INTEGER)
-RETURNS BOOLEAN AS $$
-DECLARE
-    v_sale RECORD;
-BEGIN
-    -- Get sale details
-    SELECT * INTO v_sale FROM sales WHERE salesid = p_sale_id;
-    
-    IF v_sale IS NULL THEN
-        RAISE EXCEPTION 'Sale not found: %', p_sale_id;
-    END IF;
-    
-    IF v_sale.status = 'Voided' THEN
-        RAISE EXCEPTION 'Sale is already voided';
-    END IF;
-    
-    -- Update sale status to voided
-    UPDATE sales 
-    SET status = 'Voided', 
-        void_reason = p_void_reason,
-        voided_by = p_voided_by_id
-    WHERE salesid = p_sale_id;
     
     -- Restore product stock
     UPDATE products p

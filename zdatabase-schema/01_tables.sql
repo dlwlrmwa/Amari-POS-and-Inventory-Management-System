@@ -93,9 +93,7 @@ CREATE TABLE sales (
     payment_method VARCHAR(20) NOT NULL CHECK (payment_method IN ('Cash', 'E-Payment')),
     payment_sub_method VARCHAR(20) CHECK (payment_sub_method IN ('GCash', 'Maya')),
     staffid INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    status VARCHAR(20) DEFAULT 'Completed' CHECK (status IN ('Completed', 'Voided', 'Pending')),
-    void_reason TEXT,
-    voided_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    status VARCHAR(20) DEFAULT 'Completed' CHECK (status IN ('Completed', 'Pending')),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -128,7 +126,7 @@ CREATE TABLE audit_logs (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     username VARCHAR(50),
-    action VARCHAR(50) NOT NULL CHECK (action IN ('LOGIN', 'LOGOUT', 'SALE', 'VOID', 'PAYMENT_PROCESSING', 'PRODUCT_CREATE', 'PRODUCT_UPDATE', 'PRODUCT_DELETE', 'USER_CREATE', 'USER_UPDATE', 'USER_DELETE', 'STOCK_ADJUSTMENT', 'SETTINGS_CHANGE')),
+    action VARCHAR(50) NOT NULL CHECK (action IN ('LOGIN', 'LOGOUT', 'SALE', 'PAYMENT_PROCESSING', 'PRODUCT_CREATE', 'PRODUCT_UPDATE', 'PRODUCT_DELETE', 'USER_CREATE', 'USER_UPDATE', 'USER_DELETE', 'STOCK_ADJUSTMENT', 'SETTINGS_CHANGE')),
     entity_type VARCHAR(50),
     entity_id INTEGER,
     description TEXT,
@@ -197,15 +195,3 @@ CREATE INDEX idx_product_performance_revenue ON product_sales_performance(total_
 -- =====================================================
 -- INSERT DEFAULT RECORDS
 -- =====================================================
-
--- Insert default admin user (password: admin123)
-INSERT INTO users (username, password, name, role, email, is_active) 
-VALUES ('admin', 'admin123', 'Administrator', 'admin', 'admin@amaripos.local', true)
-ON CONFLICT (username) DO NOTHING;
-
--- Insert default settings
-INSERT INTO settings (store_name, currency, timezone) 
-VALUES ('Amari POS System', 'PHP', 'Asia/Manila')
-ON CONFLICT DO NOTHING;
-
-COMMIT;
