@@ -70,7 +70,7 @@ export function Dashboard() {
         </div>
         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
           <Clock className="h-4 w-4" />
-          <span>Last updated: {formatTimeManilaTime()}</span>
+          <span>Last updated: {new Date().toLocaleTimeString()}</span>
         </div>
       </div>
 
