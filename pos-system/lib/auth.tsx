@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     if (user) {
-      // Log logout to audit logs (fire and forget)
+      // Log logout to audit logs
       void supabase.from("audit_logs").insert([{
         user_id: parseInt(user.id),
         username: user.username,

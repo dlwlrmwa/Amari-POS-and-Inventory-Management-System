@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth"
 import { LayoutDashboard, ShoppingCart, Package, BarChart3, Settings, LogOut, User } from "lucide-react"
-import Image from "next/image" // Correct import for the Next.js Image component
+import Image from "next/image"
 
 interface SidebarProps {
   activeView: string

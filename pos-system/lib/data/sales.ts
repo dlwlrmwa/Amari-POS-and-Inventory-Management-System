@@ -112,7 +112,7 @@ export async function createSale(
         .limit(1)
         .single()
 
-    if (lastSaleError && lastSaleError.code !== 'PGRST116') { // Ignore 'range not found' error for the first sale
+    if (lastSaleError && lastSaleError.code !== 'No rows') { // Ignore "no rows" error
         throw lastSaleError
     }
 

@@ -6,11 +6,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { DollarSign, ShoppingCart, Package, AlertTriangle, TrendingUp, Clock, Eye } from "lucide-react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { getLowStockProducts } from "@/lib/data/products"
 import { getTodaysSales, getSalesStats } from "@/lib/data/sales"
 import { useAuth } from "@/lib/auth"
-import { formatTimeManilaTime } from "@/lib/utils"
 import type { Product, Sale } from "@/lib/supabase/client"
 
 export function Dashboard() {
