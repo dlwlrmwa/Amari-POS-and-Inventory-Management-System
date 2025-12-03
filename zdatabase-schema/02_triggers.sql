@@ -4,9 +4,6 @@
 -- Updated: Using TIMESTAMPTZ with Asia/Manila timezone
 -- =====================================================
 
--- Set timezone for this session
-SET timezone = 'Asia/Manila';
-
 -- =====================================================
 -- TRIGGER: Update product updated_at on change
 -- =====================================================

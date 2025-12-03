@@ -263,19 +263,4 @@ GROUP BY DATE_TRUNC('month', s.date);
 
 CREATE INDEX idx_mv_monthly_sales_date ON mv_monthly_sales(month_start DESC);
 
--- =====================================================
--- PERFORMANCE SETTINGS
--- =====================================================
-
--- Analyze all tables for query optimization
-ANALYZE users;
-ANALYZE products;
-ANALYZE ingredients;
-ANALYZE sales;
-ANALYZE sale_items;
-ANALYZE audit_logs;
-ANALYZE settings;
-ANALYZE daily_sales_summary;
-ANALYZE product_sales_performance;
-
 COMMIT;

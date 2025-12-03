@@ -4,20 +4,6 @@
 -- Updated: Using TIMESTAMPTZ with Asia/Manila timezone
 -- =====================================================
 
--- Set timezone for this session
-SET timezone = 'Asia/Manila';
-
--- Drop existing tables (if needed)
-DROP TABLE IF EXISTS audit_logs CASCADE;
-DROP TABLE IF EXISTS sale_items CASCADE;
-DROP TABLE IF EXISTS sales CASCADE;
-DROP TABLE IF EXISTS products CASCADE;
-DROP TABLE IF EXISTS ingredients CASCADE;
-DROP TABLE IF EXISTS settings CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS daily_sales_summary CASCADE;
-DROP TABLE IF EXISTS product_sales_performance CASCADE;
-
 -- =====================================================
 -- USERS TABLE
 -- =====================================================
@@ -49,9 +35,6 @@ CREATE TABLE products (
     min_stock INTEGER NOT NULL DEFAULT 5,
     sku VARCHAR(50) UNIQUE NOT NULL,
     image VARCHAR(500),
-    image_url VARCHAR(500),
-    description TEXT,
-    supplier_id INTEGER,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -70,8 +53,6 @@ CREATE TABLE ingredients (
     unit VARCHAR(30) NOT NULL,
     current_stock DECIMAL(10, 2) NOT NULL DEFAULT 0,
     minimum_stock DECIMAL(10, 2) NOT NULL DEFAULT 5,
-    cost_per_unit DECIMAL(10, 2),
-    supplier VARCHAR(100),
     is_active BOOLEAN DEFAULT true,
     added_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -139,26 +120,6 @@ CREATE TABLE audit_logs (
 CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
 CREATE INDEX idx_audit_logs_action ON audit_logs(action);
 CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
-
--- =====================================================
--- SETTINGS TABLE
--- =====================================================
-CREATE TABLE settings (
-    id SERIAL PRIMARY KEY,
-    store_name VARCHAR(100),
-    store_address TEXT,
-    store_phone VARCHAR(20),
-    store_email VARCHAR(100),
-    tax_rate DECIMAL(5, 2),
-    currency VARCHAR(10),
-    timezone VARCHAR(50),
-    receipt_footer TEXT,
-    gcash_qr_url VARCHAR(500),
-    maya_qr_url VARCHAR(500),
-    business_license VARCHAR(100),
-    tin VARCHAR(20),
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
 
 -- =====================================================
 -- DAILY SALES SUMMARY VIEW TABLE

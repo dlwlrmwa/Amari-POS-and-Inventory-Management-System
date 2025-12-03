@@ -49,13 +49,13 @@ export function SalesReports() {
   useEffect(() => {
     loadSales()
     loadReports()
-  }, [])
+  }, [selectedPeriod])
 
   const loadSales = async () => {
     try {
       setLoading(true)
       const [salesData, statsData] = await Promise.all([
-        getSales(10), // last 10 transactions
+        getSales(10),
         getSalesStats(),
       ])
       setSales(salesData)
@@ -69,19 +69,25 @@ export function SalesReports() {
 
   const loadReports = async () => {
     try {
-      // Daily/weekly sales summary
-      const { data: dailyData, error: dailyError } = await supabase
-        .from("daily_sales_summary")
+      let tableName = "daily_sales_summary"
+
+      if (selectedPeriod === "weekly") {
+        tableName = "weekly_sales_summary"
+      } else if (selectedPeriod === "monthly") {
+        tableName = "monthly_sales_summary"
+      }
+
+      const { data: reportData, error: reportError } = await supabase
+        .from(tableName)
         .select("*")
         .order("date", { ascending: true })
 
-      if (dailyError) throw dailyError
-      setChartData(dailyData || [])
+      if (reportError) throw reportError
+      setChartData(reportData || [])
 
-      // Growth rate (compare last 2 periods)
-      if (dailyData && dailyData.length >= 2) {
-        const last = dailyData[dailyData.length - 1].total_sales
-        const prev = dailyData[dailyData.length - 2].total_sales
+      if (reportData && reportData.length >= 2) {
+        const last = reportData[reportData.length - 1].total_sales
+        const prev = reportData[reportData.length - 2].total_sales
         if (prev > 0) {
           setGrowthRate(((last - prev) / prev) * 100)
         }
@@ -132,6 +138,7 @@ export function SalesReports() {
             <SelectContent>
               <SelectItem value="daily">Daily</SelectItem>
               <SelectItem value="weekly">Weekly</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
             </SelectContent>
           </Select>
 
@@ -201,7 +208,7 @@ export function SalesReports() {
               <div>
                 <CardTitle>Sales Overview</CardTitle>
                 <CardDescription>
-                  {selectedPeriod === "daily" ? "Daily" : "Weekly"} sales performance
+                  {selectedPeriod === "daily" ? "Daily" : selectedPeriod === "weekly" ? "Weekly" : "Monthly"} sales performance
                 </CardDescription>
               </div>
               <Select value={selectedChart} onValueChange={setSelectedChart}>

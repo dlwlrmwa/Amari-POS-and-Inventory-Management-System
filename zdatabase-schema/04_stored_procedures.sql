@@ -28,6 +28,7 @@ RETURNS TABLE (
     message TEXT
 ) AS $$
 DECLARE
+
     v_item JSONB;
     v_product_id INTEGER;
     v_quantity INTEGER;

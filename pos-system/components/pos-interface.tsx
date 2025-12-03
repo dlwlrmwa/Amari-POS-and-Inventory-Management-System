@@ -210,67 +210,119 @@ export function POSInterface() {
       return
     }
 
-    const printWindow = window.open('', '', 'width=800,height=600')
+    const printWindow = window.open('', '', 'width=300,height=600')
     if (!printWindow) {
       alert('Cannot open print window. Please allow popups.')
       return
     }
 
-    // Create receipt HTML content
+    // Create receipt HTML content for 58mm thermal printer
     const receiptHTML = `
       <!DOCTYPE html>
       <html>
       <head>
+        <meta charset="UTF-8">
         <style>
-          body { font-family: monospace; font-size: 12px; margin: 0; padding: 20px; border: 1px solid #000; }
-          .receipt { max-width: 400px; margin: 0 auto; }
+          * { margin: 0; padding: 0; box-sizing: border-box border-width: 1px; }
+          body { 
+            font-family: 'Courier New', monospace; 
+            font-size: 11px; 
+            width: 58mm; 
+            margin: 0 auto;
+            padding: 0;
+          }
+          .receipt { 
+            width: 58mm; 
+            background: white; 
+            color: black;
+            padding: 5mm;
+          }
           .text-center { text-align: center; }
-          .mb-4 { margin-bottom: 16px; }
-          .mb-2 { margin-bottom: 8px; }
-          .mt-2 { margin-top: 8px; }
-          .mt-6 { margin-top: 24px; }
-          .border-y { border-top: 1px solid #000; border-bottom: 1px solid #000; }
-          .border-t { border-top: 1px solid #000; }
-          .py-3 { padding: 12px 0; }
-          .py-2 { padding: 8px 0; }
-          .pt-2 { padding-top: 8px; }
-          .space-y-1 > * { margin-bottom: 4px; }
-          .space-y-2 > * { margin-bottom: 8px; }
+          .mb-3 { margin-bottom: 8px; }
+          .mb-2 { margin-bottom: 6px; }
+          .mb-1 { margin-bottom: 4px; }
+          .mt-2 { margin-top: 6px; }
+          .mt-3 { margin-top: 8px; }
+          .border-dashed { 
+            border-top: 1px dashed #000; 
+            margin: 6px 0;
+          }
+          .py-2 { padding: 6px 0; }
+          .space-y-1 > * { margin-bottom: 3px; }
+          .space-y-2 > * { margin-bottom: 5px; }
           .font-bold { font-weight: bold; }
           .font-semibold { font-weight: 600; }
-          .text-lg { font-size: 14px; }
-          .text-xl { font-size: 16px; }
-          .text-xs { font-size: 10px; }
+          .text-lg { font-size: 12px; }
+          .text-xl { font-size: 13px; font-weight: bold; }
+          .text-xs { font-size: 9px; }
           .flex { display: flex; }
           .justify-between { justify-content: space-between; }
           .items-center { align-items: center; }
-          p { margin: 0; }
+          p { margin: 0; line-height: 1.3; }
+          .item-row { 
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+            word-wrap: break-word;
+          }
+          .item-name { flex: 1; }
+          .item-price { text-align: right; margin-left: 4px; white-space: nowrap; }
+          .item-detail { font-size: 9px; color: #666; }
+          @media print {
+            body { width: 58mm; margin: 0; padding: 0; }
+            .receipt { width: 58mm; padding: 5mm; }
+          }
         </style>
       </head>
       <body>
         <div class="receipt">
-          <div class="text-center mb-4">
-            <div class="text-xl font-bold">Amari's Scoops & Savours</div>
-            <p>221 R.Castillo Street, Davao City, Davao del Sur, 8000</p>
-            <p class="font-semibold mt-2">Official Receipt</p>
+          <!-- Header -->
+          <div class="text-center mb-3">
+            <p class="text-xl mb-1">Amari's Scoops</p>
+            <p class="text-xs mb-1">&amp; Savours</p>
+            <p class="text-xs">221 R.Castillo St.</p>
+            <p class="text-xs">Davao City 8000</p>
+            <p class="text-xs font-semibold mt-2">Official Receipt</p>
           </div>
-          <div class="mb-4 space-y-1">
-            <p><strong>Transaction ID:</strong> ${receipt?.id}</p>
-            <p><strong>Date:</strong> ${receipt?.date} ${receipt?.time}</p>
-            <p><strong>Payment:</strong> ${receipt?.paymentMethod} ${receipt?.paymentSubMethod ? `(${receipt.paymentSubMethod})` : ''}</p>
+
+          <!-- Transaction Info -->
+          <div class="border-dashed"></div>
+          <div class="space-y-1 mb-3 text-xs">
+            <div class="flex justify-between">
+              <span>ID:</span>
+              <span class="font-semibold">${receipt?.id}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Date:</span>
+              <span>${receipt?.date}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Time:</span>
+              <span>${receipt?.time}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Payment:</span>
+              <span>${receipt?.paymentMethod}${receipt?.paymentSubMethod ? ` (${receipt.paymentSubMethod})` : ''}</span>
+            </div>
           </div>
-          <div class="border-y py-2 mb-4 space-y-2">
+
+          <!-- Items -->
+          <div class="border-dashed"></div>
+          <div class="py-2 space-y-2">
             ${receipt?.items?.map((item: any) => `
-              <div class="flex justify-between items-center">
-                <div>
-                  <p>${item.productName}</p>
-                  <p class="text-xs">(${item.quantity} x ₱${item.unitPrice.toFixed(2)})</p>
-                </div>
-                <p>₱${item.subtotal.toFixed(2)}</p>
+              <div class="item-row">
+                <div class="item-name">${item.productName}</div>
+                <div class="item-price">₱${item.subtotal.toFixed(2)}</div>
+              </div>
+              <div class="item-detail text-xs" style="text-align: right;">
+                ${item.quantity}x @ ₱${item.unitPrice.toFixed(2)}
               </div>
             `).join('')}
           </div>
-          <div class="space-y-1">
+
+          <!-- Totals -->
+          <div class="border-dashed"></div>
+          <div class="space-y-1 text-xs mb-2">
             <div class="flex justify-between">
               <span>Subtotal:</span>
               <span>₱${getVatBreakdown(receipt?.totalAmount || 0).subtotal.toFixed(2)}</span>
@@ -279,13 +331,14 @@ export function POSInterface() {
               <span>VAT (12%):</span>
               <span>₱${getVatBreakdown(receipt?.totalAmount || 0).vatAmount.toFixed(2)}</span>
             </div>
-            <div class="flex justify-between font-bold text-lg mt-2 pt-2 border-t">
+            <div class="flex justify-between font-bold text-lg">
               <span>Total:</span>
               <span>₱${receipt?.totalAmount.toFixed(2)}</span>
             </div>
             ${receipt?.paymentMethod === "Cash" && receipt?.cashReceived ? `
-              <div class="flex justify-between mt-2">
-                <span>Cash Received:</span>
+              <div class="border-dashed mt-2"></div>
+              <div class="flex justify-between">
+                <span>Cash:</span>
                 <span>₱${receipt.cashReceived.toFixed(2)}</span>
               </div>
               <div class="flex justify-between font-semibold">
@@ -294,7 +347,12 @@ export function POSInterface() {
               </div>
             ` : ''}
           </div>
-          <p class="text-center mt-6 text-xs">Thank you for your purchase!</p>
+
+          <!-- Footer -->
+          <div class="text-center mt-3">
+            <p class="text-xs">Thank you for your</p>
+            <p class="text-xs">purchase!</p>
+          </div>
         </div>
       </body>
       </html>
