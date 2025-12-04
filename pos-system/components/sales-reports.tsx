@@ -99,16 +99,46 @@ export function SalesReports() {
 
   const handleExportExcel = async () => {
     try {
-      await exportSalesToExcel(sales, "sales-report")
+      let reportName = "sales-report"
+
+      if (selectedPeriod === "daily") {
+        await exportSalesToExcel(sales, reportName)
+      } else {
+        // For weekly and monthly, export chart data as CSV
+        const dataToExport = chartData.map(item => ({
+          date: item.date,
+          total_sales: item.total_sales,
+          transaction_count: item.transaction_count
+        }))
+
+        reportName = selectedPeriod === "weekly" ? "weekly-sales-report" : "monthly-sales-report"
+
+        // Create CSV export
+        const csv = [
+          ["Date", "Total Sales", "Transaction Count"],
+          ...dataToExport.map(item => [item.date, item.total_sales, item.transaction_count])
+        ].map(row => row.join(",")).join("\n")
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+        const link = document.createElement("a")
+        const url = URL.createObjectURL(blob)
+        link.setAttribute("href", url)
+        link.setAttribute("download", `${reportName}.csv`)
+        link.style.visibility = "hidden"
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      }
+
       toast({
         title: "Export Successful",
-        description: "Your sales report has been downloaded as an Excel file.",
+        description: `Your ${selectedPeriod} sales report has been downloaded.`,
       })
     } catch (error) {
       console.error("Failed to export:", error)
       toast({
         title: "Export Failed",
-        description: "Could not generate the Excel file. Please try again.",
+        description: "Could not generate the export file. Please try again.",
         variant: "destructive",
       })
     }
@@ -217,6 +247,7 @@ export function SalesReports() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="sales">Sales (₱)</SelectItem>
+                  <SelectItem value="transactions">Transactions</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -232,7 +263,7 @@ export function SalesReports() {
                   <Bar dataKey="total_sales" fill="hsl(var(--primary))" />
                 </BarChart>
               ) : (
-                <LineChart data={chartData}>
+                <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
@@ -243,7 +274,7 @@ export function SalesReports() {
                     stroke="hsl(var(--primary))"
                     strokeWidth={2}
                   />
-                </LineChart>
+                </BarChart>
               )}
             </ResponsiveContainer>
           </CardContent>

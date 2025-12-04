@@ -515,16 +515,32 @@ export function POSInterface() {
                         <div className="space-y-3">
                           <div>
                             <label className="text-sm font-medium mb-2 block">Cash Received</label>
-                            <Input
-                              type="number"
-                              placeholder="Enter amount"
-                              value={cashReceived}
-                              onChange={(e) => setCashReceived(e.target.value)}
-                              className="text-lg"
-                            />
+                            <div className="flex gap-2">
+                              <Input
+                                type="number"
+                                placeholder="Enter amount"
+                                value={cashReceived}
+                                onChange={(e) => setCashReceived(e.target.value)}
+                                className="text-lg flex-1"
+                              />
+                              <Button
+                                variant="destructive"
+                                onClick={() => setCashReceived("")}
+                                className="px-3"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
 
                           <div className="grid grid-cols-3 gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => setCashReceived(getTotalAmount().toString())}
+                              className="h-12 col-span-3"
+                            >
+                              Exact Amount: ₱{getTotalAmount().toFixed(2)}
+                            </Button>
                             {[50, 100, 150, 200, 500, 1000].map((amount) => (
                               <Button
                                 key={amount}

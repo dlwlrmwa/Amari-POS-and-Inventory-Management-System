@@ -153,6 +153,4 @@ CREATE TABLE product_sales_performance (
 CREATE INDEX idx_product_performance_product_id ON product_sales_performance(product_id);
 CREATE INDEX idx_product_performance_revenue ON product_sales_performance(total_revenue);
 
--- =====================================================
--- INSERT DEFAULT RECORDS
--- =====================================================
+-- END OF FILE
